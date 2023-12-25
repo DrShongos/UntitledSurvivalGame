@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GameObject.hpp"
-#include "Player.hpp"
+#include "objects/GameObject.hpp"
+#include "objects/Player.hpp"
 #include <memory>
 #include <vector>
 class MainGame 
@@ -11,12 +11,14 @@ private:
     Player* player;
     std::vector<GameObject*> objects;
     Camera2D camera;
+    Texture2D slashSprite; // TODO: Build an asset system and load the sprite using it.
 
 public:
     MainGame(); 
     ~MainGame();
 
     Camera2D& getCamera();
+    Texture2D& getSlashSprite();
     std::vector<GameObject*> getObjects();
 
     void run();

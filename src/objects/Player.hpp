@@ -1,13 +1,12 @@
 #pragma once
 
 #include "GameObject.hpp"
+#include "MovingObject.hpp"
 #include "raylib.h"
-class Player : public GameObject
+class Player : public MovingObject
 {
 private:
     Texture2D sprite;
-    Vector2 velocity;
-    float speed;
 
 public:
     Player(float speed);

@@ -1,5 +1,4 @@
 #include "MainGame.hpp"
-#include "GameObject.hpp"
 #include "raylib.h"
 #include <memory>
 
@@ -11,11 +10,14 @@ MainGame::MainGame()
     this->objects.push_back(this->player);
 
     this->objects.push_back(new GameObject(Vector2{-150.0f, 0.0f}, Vector2{96.0f, 96.0f}));
+    this->objects.push_back(new GameObject(Vector2{-96.0f, -96.0f}, Vector2{96.0f, 96.0f}));
 
     this->camera.target = this->player->getPosition();
     this->camera.offset = this->player->getPosition();
     this->camera.zoom = 1.0f;
     this->camera.rotation = 0;
+
+    this->slashSprite = LoadTexture("assets/slashNormal.png");
 }
 
 MainGame::~MainGame()
@@ -32,6 +34,11 @@ Camera2D& MainGame::getCamera()
     return this->camera;
 }
 
+Texture2D& MainGame::getSlashSprite()
+{
+    return this->slashSprite;
+}
+
 std::vector<GameObject*> MainGame::getObjects()
 {
     return this->objects;
@@ -41,8 +48,20 @@ void MainGame::run()
 {
     while (!WindowShouldClose()) {        
         // Update loop
-        for (auto& object : this->objects) {
-            object->update(*this);
+        for (auto it = this->objects.begin(); it != this->objects.end(); it++) {
+            auto object = (*it);
+
+            if (object->willBeDeleted()) {
+                TraceLog(LOG_INFO, "Deleting marked object at address %p", object);
+                it = this->objects.erase(it);
+                delete object;
+
+                // We force the update loop to restart so that other objects won't accidentally access an object 
+                // That was deleted the same frame.
+                break;
+            } 
+
+             object->update(*this);
         }
 
         // Center the camera offset
