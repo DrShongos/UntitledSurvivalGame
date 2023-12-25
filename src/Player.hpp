@@ -1,22 +1,23 @@
 #pragma once
 
+#include "GameObject.hpp"
 #include "raylib.h"
-class Player 
+class Player : public GameObject
 {
 private:
     Texture2D sprite;
-    Vector2 position;
-    Vector2 bounds;
     Vector2 velocity;
     float speed;
 
+    Camera2D camera;
+
 public:
-    Player() {}; 
     Player(float speed);
     ~Player();
 
     Texture2D getSprite();
-    Vector2 getPosition();
+    Camera2D& getCamera();
 
-    void update();
+    void update(MainGame& mainGame);
+    void draw();
 };

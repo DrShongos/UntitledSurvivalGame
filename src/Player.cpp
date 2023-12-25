@@ -1,17 +1,22 @@
 #include "Player.hpp"
+#include "MainGame.hpp"
+#include "GameObject.hpp"
 #include "raylib.h"
 #include "raymath.h"
 
-Player::Player(float speed)
+Player::Player(float speed) : GameObject(Vector2{0.0, 0.0}, Vector2{64.0, 64.0})
 {
     this->sprite = LoadTexture("assets/player.png");
-    this->position = Vector2{0.0, 0.0};
-    this->bounds = Vector2{64.0, 64.0};
     this->velocity = Vector2{0.0, 0.0};
     this->speed = speed;
 
     this->sprite.width = 64;
     this->sprite.height = 64;
+
+    this->camera.target = this->getPosition();
+    this->camera.offset = this->getPosition();
+    this->camera.zoom = 1.0f;
+    this->camera.rotation = 0;
 }
 
 Player::~Player()
@@ -25,12 +30,12 @@ Texture2D Player::getSprite()
     return this->sprite;
 }
 
-Vector2 Player::getPosition()
+Camera2D& Player::getCamera()
 {
-    return this->position;
+    return this->camera;
 }
 
-void Player::update()
+void Player::update(MainGame& mainGame)
 {
     float delta = GetFrameTime();
 
@@ -51,7 +56,17 @@ void Player::update()
     this->velocity = Vector2Normalize(this->velocity);
 
     Vector2 nextPos = Vector2Scale(this->velocity, this->speed * delta);
-    nextPos = Vector2Add(this->position, nextPos);
+    nextPos = Vector2Add(this->getPosition(), nextPos);
     
-    this->position = nextPos;
+    this->getPosition() = nextPos;
+
+    float screenWidth = (float)GetScreenWidth();
+    float screenHeight = (float)GetScreenHeight();
+
+    this->camera.offset = Vector2{screenWidth / 2.0f, screenHeight / 2.0f};
+}
+
+void Player::draw()
+{
+    DrawTextureV(this->sprite, this->getPosition(), WHITE);
 }
