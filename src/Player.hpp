@@ -9,14 +9,11 @@ private:
     Vector2 velocity;
     float speed;
 
-    Camera2D camera;
-
 public:
     Player(float speed);
     ~Player();
 
-    Texture2D getSprite();
-    Camera2D& getCamera();
+    Texture2D& getSprite();
 
     void update(MainGame& mainGame);
     void draw();

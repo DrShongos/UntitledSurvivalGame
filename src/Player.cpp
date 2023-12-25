@@ -10,13 +10,8 @@ Player::Player(float speed) : GameObject(Vector2{0.0, 0.0}, Vector2{64.0, 64.0})
     this->velocity = Vector2{0.0, 0.0};
     this->speed = speed;
 
-    this->sprite.width = 64;
-    this->sprite.height = 64;
-
-    this->camera.target = this->getPosition();
-    this->camera.offset = this->getPosition();
-    this->camera.zoom = 1.0f;
-    this->camera.rotation = 0;
+    //this->sprite.width = 64;
+    //this->sprite.height = 64; 
 }
 
 Player::~Player()
@@ -25,15 +20,11 @@ Player::~Player()
     //UnloadTexture(this->sprite);
 }
 
-Texture2D Player::getSprite()
+Texture2D& Player::getSprite()
 {
     return this->sprite;
 }
 
-Camera2D& Player::getCamera()
-{
-    return this->camera;
-}
 
 void Player::update(MainGame& mainGame)
 {
@@ -55,18 +46,39 @@ void Player::update(MainGame& mainGame)
 
     this->velocity = Vector2Normalize(this->velocity);
 
+    bool canMoveX = true;
+    bool canMoveY = true;
+
     Vector2 nextPos = Vector2Scale(this->velocity, this->speed * delta);
     nextPos = Vector2Add(this->getPosition(), nextPos);
-    
-    this->getPosition() = nextPos;
 
-    float screenWidth = (float)GetScreenWidth();
-    float screenHeight = (float)GetScreenHeight();
+    Vector2 nextPosX = this->getPosition();
+    nextPosX.x = nextPos.x;
 
-    this->camera.offset = Vector2{screenWidth / 2.0f, screenHeight / 2.0f};
+    Vector2 nextPosY = this->getPosition();
+    nextPosY.y = nextPos.y;
+
+    for (auto& object : mainGame.getObjects()) {
+        if (object == this)
+            continue;
+
+        if (this->willCollide(nextPosX, *object))
+            canMoveX = false;
+
+        // movement will be discarded if new position will cause the object to collide
+        if (this->willCollide(nextPosY, *object))
+            canMoveY = false;
+    }
+
+    if (canMoveX)
+        this->getPosition().x = nextPosX.x;
+
+    if (canMoveY)
+        this->getPosition().y = nextPosY.y;
 }
 
 void Player::draw()
 {
-    DrawTextureV(this->sprite, this->getPosition(), WHITE);
+    DrawRectangleLines(this->getPosition().x, this->getPosition().y, this->getBounds().x, this->getBounds().y, RED);
+    DrawTextureEx(this->sprite, this->getPosition(), 0.0, 4.0, WHITE);
 }
