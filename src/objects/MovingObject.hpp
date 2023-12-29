@@ -8,7 +8,8 @@ protected:
     Vector2 velocity;
     float speed;
 public:
-    MovingObject(Vector2 position, Vector2 bounds, float speed);
+    MovingObject(Texture2D sprite, Vector2 position, Vector2 bounds, float speed);
+    MovingObject(Texture2D sprite, Vector2 position, float radius, float speed);
 
     bool move(MainGame& mainGame);
 };

@@ -1,18 +1,12 @@
 #include "Player.hpp"
 #include "../MainGame.hpp"
 #include "GameObject.hpp"
+#include "Projectile.hpp"
 #include "raylib.h"
 #include "raymath.h"
 
-Player::Player(float speed) : MovingObject(Vector2{0.0, 0.0}, Vector2{64.0, 64.0}, speed)
+Player::Player(float speed) : MovingObject(LoadTexture("assets/humanoid.png"), Vector2{0.0, 0.0}, Vector2{96.0, 192.0}, speed)
 {
-    this->sprite = LoadTexture("assets/player.png");
-}
-
-Player::~Player()
-{
-    // This line causes a segmentation fault when exiting the program.
-    //UnloadTexture(this->sprite);
 }
 
 Texture2D& Player::getSprite()
@@ -39,13 +33,10 @@ void Player::update(MainGame& mainGame)
     if (IsKeyDown(KEY_D))
         this->velocity.x = 1.0;
 
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        mainGame.insertObject(new Projectile(mainGame, Vector2{-0.45, -0.45}, Vector2{0.0f, 120.0f}, 29.0f, 450.0f));
+
     this->velocity = Vector2Normalize(this->velocity);
 
     this->move(mainGame);
-}
-
-void Player::draw()
-{
-    DrawRectangleLines(this->getPosition().x, this->getPosition().y, this->getBounds().x, this->getBounds().y, RED);
-    DrawTextureEx(this->sprite, this->getPosition(), 0.0, 4.0, WHITE);
 }

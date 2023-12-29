@@ -2,21 +2,26 @@
 
 class MainGame;
 
+#include "../Collision.hpp"
 #include "raylib.h"
 
 class GameObject
 {
-private:
+protected:
+    Texture2D sprite;
     Vector2 position;
-    Vector2 bounds;
-
+    Collider collider;
+private:
     /// When this is set to true, the object will be erased in the next frame.
     bool toDelete;
+    bool drawSprite;
 public:
+    GameObject(Texture2D sprite, Vector2 position, Vector2 bounds);
+    GameObject(Texture2D sprite, Vector2 position, float radius);
     GameObject(Vector2 position, Vector2 bounds);
 
     Vector2& getPosition();
-    Vector2& getBounds();
+    Collider& getCollider();
     bool willBeDeleted();
 
     void setPosition(Vector2 newPosition);
@@ -25,6 +30,4 @@ public:
 
     virtual void draw();
     virtual void update(MainGame& mainGame);
-
-    bool willCollide(Vector2 pos, GameObject& other);
 };

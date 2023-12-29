@@ -1,4 +1,5 @@
 #include "MainGame.hpp"
+#include "objects/Projectile.hpp"
 #include "raylib.h"
 #include <memory>
 
@@ -47,6 +48,14 @@ std::vector<GameObject*> MainGame::getObjects()
 void MainGame::run()
 {
     while (!WindowShouldClose()) {        
+        for (auto it = this->initializationQueue.begin(); it != this->initializationQueue.end(); it++) {
+            auto object = (*it);
+            this->objects.push_back(object); 
+        }
+        if (this->initializationQueue.size() > 0)
+            TraceLog(LOG_INFO, "Initialized %d new objects", this->initializationQueue.size());
+        this->initializationQueue.clear();
+
         // Update loop
         for (auto it = this->objects.begin(); it != this->objects.end(); it++) {
             auto object = (*it);
@@ -84,3 +93,4 @@ void MainGame::run()
         EndDrawing();
     }
 }
+

@@ -4,7 +4,11 @@
 #include "raylib.h"
 #include "raymath.h"
 
-MovingObject::MovingObject(Vector2 position, Vector2 bounds, float speed) : GameObject(position, bounds), velocity{0, 0}, speed{speed}
+MovingObject::MovingObject(Texture2D sprite, Vector2 position, Vector2 bounds, float speed) : GameObject(sprite, position, bounds), velocity{0, 0}, speed{speed}
+{
+}
+
+MovingObject::MovingObject(Texture2D sprite, Vector2 position, float radius, float speed) : GameObject(sprite, position, radius), velocity{0, 0}, speed{speed}
 {
 }
 
@@ -26,10 +30,10 @@ bool MovingObject::move(MainGame& mainGame)
         if (object == this)
             continue;
 
-        if (this->willCollide(xMovement, *object))
+        if (checkCollision(xMovement, this->collider, object->getPosition(), object->getCollider()))
             moveX = false;
 
-        if (this->willCollide(yMovement, *object))
+        if (checkCollision(yMovement, this->collider, object->getPosition(), object->getCollider()))
             moveY = false;
     } 
 
