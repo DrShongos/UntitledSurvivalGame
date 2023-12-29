@@ -7,11 +7,10 @@ MainGame::MainGame()
 {
     SetTargetFPS(60);
     
-    this->player = new Player(150.0f);
-    this->objects.push_back(this->player);
+    this->player = this->insertObject(new Player(150.0f)); 
 
-    this->objects.push_back(new GameObject(Vector2{-150.0f, 0.0f}, Vector2{96.0f, 96.0f}));
-    this->objects.push_back(new GameObject(Vector2{-96.0f, -96.0f}, Vector2{96.0f, 96.0f}));
+    this->insertObject(new GameObject(LoadTexture("assets/humanoid.png"), Vector2{-150.0f, 0.0}, Vector2{96.0, 192.0}));
+    this->insertObject(new GameObject(LoadTexture("assets/humanoid.png"), Vector2{-96.0f, -192.0}, Vector2{96.0, 192.0}));
 
     this->camera.target = this->player->getPosition();
     this->camera.offset = this->player->getPosition();

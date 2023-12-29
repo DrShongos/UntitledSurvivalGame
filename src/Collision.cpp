@@ -25,11 +25,11 @@ static bool circleBoxCollision(Vector2& circlePosition, Collider& circle, Vector
 
 bool checkCollision(Vector2& aPosition, Collider& a, Vector2& bPosition, Collider& b)
 {
-    if (a.type == Collider::BOUNDING_BOX && a.type == Collider::BOUNDING_BOX) {
-        return (aPosition.x < bPosition.x + b.bounds.x &&
-                aPosition.x + a.bounds.x > bPosition.x &&
-                aPosition.y < bPosition.y + b.bounds.y &&
-                aPosition.y + a.bounds.y > b.bounds.y);
+    if (a.type == Collider::BOUNDING_BOX && b.type == Collider::BOUNDING_BOX) {
+        return (aPosition.x <= bPosition.x + b.bounds.x &&
+                aPosition.x + a.bounds.x >= bPosition.x &&
+                aPosition.y <= bPosition.y + b.bounds.y &&
+                aPosition.y + a.bounds.y >= bPosition.y);
     }
 
     if (a.type == Collider::CIRCLE && b.type == Collider::CIRCLE) {

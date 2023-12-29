@@ -61,9 +61,7 @@ void GameObject::draw()
             offsetPosition.y -= offset;
             DrawTextureEx(this->sprite, offsetPosition, 0.0, 4.0, WHITE);
         }
-
-    }
-    else {
+    } else {
         if (this->collider.type == Collider::BOUNDING_BOX)
             DrawRectangleV(this->position, this->collider.bounds, WHITE);
         else 
