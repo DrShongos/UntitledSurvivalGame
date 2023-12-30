@@ -8,6 +8,7 @@ class MainGame;
 class GameObject
 {
 protected:
+    float rotation;
     Texture2D sprite;
     Vector2 position;
     Collider collider;
@@ -16,9 +17,9 @@ private:
     bool toDelete;
     bool drawSprite;
 public:
-    GameObject(Texture2D sprite, Vector2 position, Vector2 bounds);
-    GameObject(Texture2D sprite, Vector2 position, float radius);
-    GameObject(Vector2 position, Vector2 bounds);
+    GameObject(Texture2D sprite, Vector2 position, Vector2 bounds, bitmask layer, bitmask mask);
+    GameObject(Texture2D sprite, Vector2 position, float radius, bitmask layer, bitmask mask);
+    GameObject(Vector2 position, Vector2 bounds, bitmask layer, bitmask mask);
 
     Vector2& getPosition();
     Collider& getCollider();

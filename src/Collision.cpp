@@ -25,6 +25,9 @@ static bool circleBoxCollision(Vector2& circlePosition, Collider& circle, Vector
 
 bool checkCollision(Vector2& aPosition, Collider& a, Vector2& bPosition, Collider& b)
 {
+    if (!(a.mask & b.layer))
+        return false;
+
     if (a.type == Collider::BOUNDING_BOX && b.type == Collider::BOUNDING_BOX) {
         return (aPosition.x <= bPosition.x + b.bounds.x &&
                 aPosition.x + a.bounds.x >= bPosition.x &&

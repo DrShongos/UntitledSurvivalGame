@@ -4,8 +4,9 @@
 #include "Projectile.hpp"
 #include "raylib.h"
 #include "raymath.h"
+#include <cmath>
 
-Player::Player(float speed) : MovingObject(LoadTexture("assets/humanoid.png"), Vector2{0.0, 0.0}, Vector2{96.0, 192.0}, speed)
+Player::Player(float speed) : MovingObject(LoadTexture("assets/humanoid.png"), Vector2{0.0, 0.0}, Vector2{96.0, 192.0}, speed, PLAYER_LAYER, STATIC_OBJECT_LAYER | PROJECTILE_LAYER)
 {
 }
 
@@ -33,10 +34,24 @@ void Player::update(MainGame& mainGame)
     if (IsKeyDown(KEY_D))
         this->velocity.x = 1.0;
 
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-        mainGame.insertObject(new Projectile(mainGame, Vector2{-0.45, -0.45}, Vector2{0.0f, 120.0f}, 29.0f, 450.0f));
-
     this->velocity = Vector2Normalize(this->velocity);
 
     this->move(mainGame);
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 mousePos = GetMousePosition();
+        mousePos = GetScreenToWorld2D(mousePos, mainGame.getCamera());
+
+        Vector2 direction = Vector2Normalize(Vector2Subtract(mousePos, this->position));
+
+        Vector2 offsetDir = Vector2AddValue(direction, 1.0);
+
+        Vector2 offset = Vector2{
+            this->position.x + (this->collider.bounds.x * 0.5f * offsetDir.x),
+            this->position.y + (this->collider.bounds.y * 0.5f * offsetDir.y)
+        };
+        //Vector2Scale(offset, 0.05);
+
+        mainGame.insertObject(new Projectile(mainGame, direction, offset, 29.0f, 450.0f, STATIC_OBJECT_LAYER));
+    }
 }

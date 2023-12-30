@@ -4,11 +4,11 @@
 #include "raylib.h"
 #include "raymath.h"
 
-MovingObject::MovingObject(Texture2D sprite, Vector2 position, Vector2 bounds, float speed) : GameObject(sprite, position, bounds), velocity{0, 0}, speed{speed}
+MovingObject::MovingObject(Texture2D sprite, Vector2 position, Vector2 bounds, float speed, bitmask layer, bitmask mask) : GameObject(sprite, position, bounds, layer, mask), velocity{0, 0}, speed{speed}
 {
 }
 
-MovingObject::MovingObject(Texture2D sprite, Vector2 position, float radius, float speed) : GameObject(sprite, position, radius), velocity{0, 0}, speed{speed}
+MovingObject::MovingObject(Texture2D sprite, Vector2 position, float radius, float speed, bitmask layer, bitmask mask) : GameObject(sprite, position, radius, layer, mask), velocity{0, 0}, speed{speed}
 {
 }
 
@@ -28,6 +28,9 @@ bool MovingObject::move(MainGame& mainGame)
 
     for (auto& object : mainGame.getObjects()) {
         if (object == this)
+            continue;
+
+        if (object->getCollider().layer & PROJECTILE_LAYER)
             continue;
 
         if (checkCollision(xMovement, this->collider, object->getPosition(), object->getCollider()))

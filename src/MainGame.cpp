@@ -1,4 +1,5 @@
 #include "MainGame.hpp"
+#include "Collision.hpp"
 #include "objects/Projectile.hpp"
 #include "raylib.h"
 #include <memory>
@@ -9,8 +10,8 @@ MainGame::MainGame()
     
     this->player = this->insertObject(new Player(150.0f)); 
 
-    this->insertObject(new GameObject(LoadTexture("assets/humanoid.png"), Vector2{-150.0f, 0.0}, Vector2{96.0, 192.0}));
-    this->insertObject(new GameObject(LoadTexture("assets/humanoid.png"), Vector2{-96.0f, -192.0}, Vector2{96.0, 192.0}));
+    this->insertObject(new GameObject(LoadTexture("assets/humanoid.png"), Vector2{-150.0f, 0.0}, Vector2{96.0, 192.0}, STATIC_OBJECT_LAYER, PROJECTILE_LAYER));
+    this->insertObject(new GameObject(LoadTexture("assets/humanoid.png"), Vector2{-96.0f, -192.0}, Vector2{96.0, 192.0}, STATIC_OBJECT_LAYER, PROJECTILE_LAYER));
 
     this->camera.target = this->player->getPosition();
     this->camera.offset = this->player->getPosition();
