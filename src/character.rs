@@ -1,12 +1,19 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
+use crate::combat::ProjectileStats;
+
 pub struct CharacterPlugin;
 
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedUpdate, move_characters);
     }
+}
+
+#[derive(Component)]
+pub struct ProjectileShooter {
+    pub projectile_stats: ProjectileStats,
 }
 
 #[derive(Component)]
@@ -30,4 +37,8 @@ fn move_characters(mut character_query: Query<(&Character, &mut Velocity)>, time
             velocity.linvel = velocity.linvel.lerp(Vec2::ZERO, character.damp * delta);
         }
     }
+}
+
+pub fn direction_to(position: Vec2, target: Vec2) -> Vec2 {
+    (target - position).normalize_or_zero()
 }

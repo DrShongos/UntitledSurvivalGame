@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::character::Character;
+use crate::character::{self, Character, ProjectileShooter};
+use crate::combat::{ProjectileStats, SpawnProjectileEvent};
 use crate::graphics::GameAssets;
 
 pub struct PlayerPlugin;
@@ -9,7 +10,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player)
-            .add_systems(FixedUpdate, player_movement);
+            .add_systems(Update, player_input);
     }
 }
 
@@ -37,30 +38,56 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
             accel: 3.9,
             damp: 5.0,
         })
+        .insert(ProjectileShooter {
+            projectile_stats: ProjectileStats { speed: 25000.0 },
+        })
         .insert(Player);
 }
 
-fn player_movement(
-    mut player_query: Query<&mut Character, With<Player>>,
-    input: Res<Input<KeyCode>>,
+fn player_input(
+    mut player_query: Query<(&ProjectileShooter, &Transform, &mut Character), With<Player>>,
+    mut shoot_event_writer: EventWriter<SpawnProjectileEvent>,
+    key_input: Res<Input<KeyCode>>,
+    mouse_input: Res<Input<MouseButton>>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform)>,
 ) {
-    let mut character = player_query.single_mut();
+    let (shooter, transform, mut character) = player_query.single_mut();
+    let window = windows.single();
+    let (camera, camera_transform) = camera.single();
 
     character.input = Vec2::ZERO;
 
-    if input.pressed(KeyCode::W) {
+    if key_input.pressed(KeyCode::W) {
         character.input.y = 1.0;
     }
 
-    if input.pressed(KeyCode::S) {
+    if key_input.pressed(KeyCode::S) {
         character.input.y = -1.0;
     }
 
-    if input.pressed(KeyCode::A) {
+    if key_input.pressed(KeyCode::A) {
         character.input.x = -1.0;
     }
 
-    if input.pressed(KeyCode::D) {
+    if key_input.pressed(KeyCode::D) {
         character.input.x = 1.0;
+    }
+
+    if mouse_input.pressed(MouseButton::Left) {
+        if let Some(world_position) = window
+            .cursor_position()
+            .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor))
+        {
+            let position = transform.translation.truncate();
+
+            let direction = character::direction_to(position, world_position);
+
+            shoot_event_writer.send(SpawnProjectileEvent {
+                projectile_stats: shooter.projectile_stats.clone(),
+                direction,
+                start_position: position,
+            });
+        }
     }
 }
