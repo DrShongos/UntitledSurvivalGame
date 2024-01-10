@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::character::{self, Character, ProjectileShooter};
-use crate::combat::{ProjectileStats, SpawnProjectileEvent};
+use crate::character::{Character, ProjectileShooter, ShootEvent};
+use crate::combat::{ProjectileStats, ENEMY_GROUP, PLAYER_GROUP};
 use crate::graphics::GameAssets;
 
 pub struct PlayerPlugin;
@@ -32,27 +32,35 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
         .insert(Collider::cuboid(35.0, 75.0))
         .insert(Velocity::zero())
         .insert(LockedAxes::ROTATION_LOCKED)
+        .insert(CollisionGroups::new(
+            Group::from_bits_truncate(PLAYER_GROUP),
+            Group::from_bits_truncate(0b0001),
+        ))
         .insert(Character {
             input: Vec2::ZERO,
-            speed: 6000.0,
+            speed: 7500.0,
             accel: 3.9,
             damp: 5.0,
         })
         .insert(ProjectileShooter {
-            projectile_stats: ProjectileStats { speed: 25000.0 },
+            projectile_stats: ProjectileStats {
+                speed: 25000.0,
+                life_time: Timer::from_seconds(0.12, TimerMode::Once),
+            },
+            attack_speed: Timer::from_seconds(0.5, TimerMode::Once),
         })
         .insert(Player);
 }
 
 fn player_input(
-    mut player_query: Query<(&ProjectileShooter, &Transform, &mut Character), With<Player>>,
-    mut shoot_event_writer: EventWriter<SpawnProjectileEvent>,
+    mut player_query: Query<(Entity, &mut Character), With<Player>>,
+    mut shoot_event_writer: EventWriter<ShootEvent>,
     key_input: Res<Input<KeyCode>>,
     mouse_input: Res<Input<MouseButton>>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
 ) {
-    let (shooter, transform, mut character) = player_query.single_mut();
+    let (entity, mut character) = player_query.single_mut();
     let window = windows.single();
     let (camera, camera_transform) = camera.single();
 
@@ -79,14 +87,10 @@ fn player_input(
             .cursor_position()
             .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor))
         {
-            let position = transform.translation.truncate();
-
-            let direction = character::direction_to(position, world_position);
-
-            shoot_event_writer.send(SpawnProjectileEvent {
-                projectile_stats: shooter.projectile_stats.clone(),
-                direction,
-                start_position: position,
+            shoot_event_writer.send(ShootEvent {
+                entity,
+                target: world_position,
+                target_group: ENEMY_GROUP,
             });
         }
     }
