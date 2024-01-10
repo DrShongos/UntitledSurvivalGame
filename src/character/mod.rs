@@ -3,11 +3,15 @@ use bevy_rapier2d::prelude::*;
 
 use crate::combat::{ProjectileStats, SpawnProjectileEvent};
 
+pub mod npc;
+pub mod player;
+
 pub struct CharacterPlugin;
 
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ShootEvent>()
+        app.add_plugins((npc::NpcPlugin, player::PlayerPlugin))
+            .add_event::<ShootEvent>()
             .add_systems(FixedUpdate, move_characters)
             .add_systems(Update, (shoot_events, shooter_cooldown));
     }

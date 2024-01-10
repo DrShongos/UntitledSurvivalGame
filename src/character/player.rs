@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::character::{Character, ProjectileShooter, ShootEvent};
-use crate::combat::{ProjectileStats, ENEMY_GROUP, PLAYER_GROUP};
+use crate::combat::{ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
 use crate::graphics::GameAssets;
 
 pub struct PlayerPlugin;
@@ -35,7 +35,7 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
         .insert(LockedAxes::ROTATION_LOCKED)
         .insert(CollisionGroups::new(
             Group::from_bits_truncate(PLAYER_GROUP),
-            Group::from_bits_truncate(0b0001),
+            Group::from_bits_truncate(PROJECTILE_GROUP | 0b0001),
         ))
         .insert(Character {
             input: Vec2::ZERO,

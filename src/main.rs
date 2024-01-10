@@ -4,7 +4,6 @@ use bevy_rapier2d::prelude::*;
 mod character;
 mod combat;
 mod graphics;
-mod player;
 
 fn main() {
     App::new()
@@ -14,7 +13,6 @@ fn main() {
         .add_plugins((
             character::CharacterPlugin,
             graphics::GraphicsPlugin,
-            player::PlayerPlugin,
             combat::CombatPlugin,
         ))
         .add_systems(Startup, (setup_camera, setup_physics))
@@ -25,11 +23,6 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
-fn setup_physics(mut commands: Commands, mut rapier_config: ResMut<RapierConfiguration>) {
+fn setup_physics(mut rapier_config: ResMut<RapierConfiguration>) {
     rapier_config.gravity = Vec2::ZERO;
-
-    commands
-        .spawn(RigidBody::Fixed)
-        .insert(Collider::cuboid(100.0, 50.0))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, -100.0, 0.0)));
 }
