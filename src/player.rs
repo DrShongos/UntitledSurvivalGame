@@ -10,6 +10,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player)
+            .add_systems(FixedUpdate, camera_follow)
             .add_systems(Update, player_input);
     }
 }
@@ -52,6 +53,20 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
         .insert(Player);
 }
 
+fn camera_follow(
+    player_query: Query<&Transform, With<Player>>,
+    mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>,
+    time: Res<Time>,
+) {
+    if let Ok(mut camera_transform) = camera_query.get_single_mut() {
+        if let Ok(player_transform) = player_query.get_single() {
+            camera_transform.translation = camera_transform
+                .translation
+                .lerp(player_transform.translation, 1.5 * time.delta_seconds());
+        }
+    }
+}
+
 fn player_input(
     mut player_query: Query<(Entity, &mut Character), With<Player>>,
     mut shoot_event_writer: EventWriter<ShootEvent>,
@@ -60,38 +75,39 @@ fn player_input(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
 ) {
-    let (entity, mut character) = player_query.single_mut();
-    let window = windows.single();
-    let (camera, camera_transform) = camera.single();
+    if let Ok((entity, mut character)) = player_query.get_single_mut() {
+        let window = windows.single();
+        let (camera, camera_transform) = camera.single();
 
-    character.input = Vec2::ZERO;
+        character.input = Vec2::ZERO;
 
-    if key_input.pressed(KeyCode::W) {
-        character.input.y = 1.0;
-    }
+        if key_input.pressed(KeyCode::W) {
+            character.input.y = 1.0;
+        }
 
-    if key_input.pressed(KeyCode::S) {
-        character.input.y = -1.0;
-    }
+        if key_input.pressed(KeyCode::S) {
+            character.input.y = -1.0;
+        }
 
-    if key_input.pressed(KeyCode::A) {
-        character.input.x = -1.0;
-    }
+        if key_input.pressed(KeyCode::A) {
+            character.input.x = -1.0;
+        }
 
-    if key_input.pressed(KeyCode::D) {
-        character.input.x = 1.0;
-    }
+        if key_input.pressed(KeyCode::D) {
+            character.input.x = 1.0;
+        }
 
-    if mouse_input.pressed(MouseButton::Left) {
-        if let Some(world_position) = window
-            .cursor_position()
-            .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor))
-        {
-            shoot_event_writer.send(ShootEvent {
-                entity,
-                target: world_position,
-                target_group: ENEMY_GROUP,
-            });
+        if mouse_input.pressed(MouseButton::Left) {
+            if let Some(world_position) = window
+                .cursor_position()
+                .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor))
+            {
+                shoot_event_writer.send(ShootEvent {
+                    entity,
+                    target: world_position,
+                    target_group: ENEMY_GROUP,
+                });
+            }
         }
     }
 }
