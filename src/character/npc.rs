@@ -72,10 +72,13 @@ fn spawn_friendly(commands: &mut Commands, game_assets: &Res<GameAssets>, positi
         });
 }
 
-fn npc_update(mut npc_query: Query<(&Transform, &mut NpcKind, &mut Character)>, time: Res<Time>) {
+fn npc_update(
+    mut npc_query: Query<(&Transform, &mut NpcKind, &mut Character, &mut Velocity)>,
+    time: Res<Time>,
+) {
     let mut rng = rand::thread_rng();
 
-    for (transform, mut npc_kind, mut character) in npc_query.iter_mut() {
+    for (transform, mut npc_kind, mut character, mut velocity) in npc_query.iter_mut() {
         match npc_kind.as_mut() {
             NpcKind::Friendly {
                 target_point,
@@ -86,11 +89,14 @@ fn npc_update(mut npc_query: Query<(&Transform, &mut NpcKind, &mut Character)>, 
                 if let Some(target) = target_point {
                     let position = transform.translation.truncate();
 
-                    if (position.distance(*target)) > 5.0 {
+                    if (position.distance(*target)) > 7.5 {
                         character.input =
                             super::direction_to(transform.translation.truncate(), *target);
                     } else {
                         character.input = Vec2::ZERO;
+                        velocity.linvel = velocity
+                            .linvel
+                            .lerp(Vec2::ZERO, character.damp * time.delta_seconds());
                     }
                 } else {
                     character.input = Vec2::ZERO;

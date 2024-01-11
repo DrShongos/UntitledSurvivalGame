@@ -68,10 +68,6 @@ fn spawn_projectile(
             Group::from_bits_truncate(PROJECTILE_GROUP),
             Group::from_bits_truncate(target_group | 0b0001),
         ))
-        .insert(SolverGroups::new(
-            Group::from_bits_truncate(PROJECTILE_GROUP),
-            Group::from_bits_truncate(target_group | 0b0001),
-        ))
         .insert(ActiveEvents::COLLISION_EVENTS)
         .insert(LockedAxes::ROTATION_LOCKED)
         .insert(Velocity::zero())
