@@ -3,7 +3,11 @@ use core::panic;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{character::Character, graphics::GameAssets};
+use crate::{
+    animation::{Animated, Animation},
+    character::Character,
+    graphics::GameAssets,
+};
 
 pub struct CombatPlugin;
 
@@ -15,16 +19,20 @@ impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnProjectileEvent>()
             .add_event::<CharacterAttackEvent>()
+            .add_event::<ProjectileVanishEvent>()
             .add_systems(
                 Update,
                 (
                     projectile_spawn_event,
                     character_attack_event,
                     collision_event,
+                    projectile_vanish_event,
+                    immunity_update,
                 ),
             )
             .add_systems(FixedUpdate, handle_projectiles)
             .register_type::<Projectile>()
+            .register_type::<Immunity>()
             .register_type::<ProjectileStats>();
     }
 }
@@ -35,6 +43,11 @@ pub struct SpawnProjectileEvent {
     pub direction: Vec2,
     pub start_position: Vec2,
     pub target_group: u32,
+}
+
+#[derive(Event)]
+pub struct ProjectileVanishEvent {
+    pub projectile: Entity,
 }
 
 #[derive(Event)]
@@ -57,6 +70,9 @@ pub struct Projectile {
     pub direction: Vec2,
 }
 
+#[derive(Reflect, Component)]
+pub struct Immunity(pub Timer);
+
 fn spawn_projectile(
     commands: &mut Commands,
     game_assets: &Res<GameAssets>,
@@ -74,10 +90,13 @@ fn spawn_projectile(
             transform: Transform {
                 translation: position.extend(1.0),
                 rotation: Quat::from_rotation_arc_2d(Vec2::Y, direction),
-                ..Default::default()
+                scale: Vec3::ZERO,
             },
             texture: game_assets.slash.clone(),
             ..Default::default()
+        })
+        .insert(Animated {
+            current: Some(Animation::projectile_grow(1.0)),
         })
         .insert(RigidBody::Dynamic)
         .insert(Collider::cuboid(32.0, 24.0))
@@ -96,8 +115,8 @@ fn spawn_projectile(
 }
 
 fn handle_projectiles(
-    mut commands: Commands,
     mut projectile_query: Query<(Entity, &mut Projectile, &mut Transform, &mut Velocity)>,
+    mut projectile_vanish_writer: EventWriter<ProjectileVanishEvent>,
     time: Res<Time>,
 ) {
     let delta = time.delta_seconds();
@@ -113,7 +132,7 @@ fn handle_projectiles(
         projectile.stats.life_time.tick(time.delta());
 
         if projectile.stats.life_time.finished() {
-            commands.entity(entity).despawn_recursive();
+            projectile_vanish_writer.send(ProjectileVanishEvent { projectile: entity });
         }
 
         transform.rotation = Quat::from_rotation_arc_2d(Vec2::Y, projectile.direction);
@@ -122,12 +141,23 @@ fn handle_projectiles(
     }
 }
 
+fn projectile_vanish_event(
+    mut animated_query: Query<&mut Animated>,
+    mut vanish_events: EventReader<ProjectileVanishEvent>,
+) {
+    for event in vanish_events.read() {
+        if let Ok(mut animated) = animated_query.get_mut(event.projectile) {
+            animated.current = Some(Animation::projectile_vanish());
+        }
+    }
+}
+
 fn collision_event(
-    mut commands: Commands,
     projectile_query: Query<&Projectile>,
     character_query: Query<&Character>,
     mut collision_events: EventReader<CollisionEvent>,
     mut attack_event_writer: EventWriter<CharacterAttackEvent>,
+    mut projectile_vanish_writer: EventWriter<ProjectileVanishEvent>,
 ) {
     for event in collision_events.read() {
         if let CollisionEvent::Started(first, second, _) = event {
@@ -140,7 +170,7 @@ fn collision_event(
                         projectile: (*hit_projectile).clone(),
                     });
                 }
-                commands.entity(*first).despawn_recursive();
+                projectile_vanish_writer.send(ProjectileVanishEvent { projectile: *first });
                 continue; // If this branch happened, there's no reason to check a second time, so we carry on
             }
 
@@ -151,7 +181,9 @@ fn collision_event(
                         projectile: (*hit_projectile).clone(),
                     });
                 }
-                commands.entity(*second).despawn_recursive();
+                projectile_vanish_writer.send(ProjectileVanishEvent {
+                    projectile: *second,
+                });
             }
         }
     }
@@ -159,18 +191,31 @@ fn collision_event(
 
 fn character_attack_event(
     mut attack_events: EventReader<CharacterAttackEvent>,
-    mut character_query: Query<(&mut Character, &mut Velocity)>,
+    mut character_query: Query<(&mut Character, &mut Immunity, &mut Velocity)>,
     time: Res<Time>,
 ) {
     let delta = time.delta_seconds();
 
     for event in attack_events.read() {
-        if let Ok((mut character, mut velocity)) = character_query.get_mut(event.victim) {
-            character.health -= event.projectile.stats.damage;
+        if let Ok((mut character, mut immunity, mut velocity)) =
+            character_query.get_mut(event.victim)
+        {
+            if immunity.0.finished() {
+                character.health -= event.projectile.stats.damage;
 
-            velocity.linvel =
-                event.projectile.direction * (event.projectile.stats.knockback * delta);
+                velocity.linvel =
+                    event.projectile.direction * (event.projectile.stats.knockback * delta);
+
+                immunity.0.reset();
+                immunity.0.unpause();
+            }
         }
+    }
+}
+
+fn immunity_update(mut immunity_query: Query<&mut Immunity>, time: Res<Time>) {
+    for mut immunity in immunity_query.iter_mut() {
+        immunity.0.tick(time.delta());
     }
 }
 

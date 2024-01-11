@@ -62,7 +62,9 @@ fn spawn_tree(
                 ..Default::default()
             },
             texture_atlas: game_assets.tree_atlas.clone(),
-            transform: Transform::from_translation(position.extend(2.0 + z_offset)),
+            transform: Transform::from_translation(
+                position.extend(2.0_f32.max(2.0 + z_offset - position.y)),
+            ),
             ..Default::default()
         })
         .push_children(&[root]);

@@ -80,7 +80,7 @@ pub fn shoot_events(
 
                 let direction = direction_to(position, event.target);
 
-                let position = position + (extents * direction * 1.33);
+                let position = position + (extents * direction);
 
                 spawn_event_writer.send(SpawnProjectileEvent {
                     projectile_stats: shooter.projectile_stats.clone(),

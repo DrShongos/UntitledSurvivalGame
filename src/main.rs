@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
+mod animation;
 mod character;
 mod combat;
 mod debug;
@@ -17,6 +18,7 @@ fn main() {
             character::CharacterPlugin,
             graphics::GraphicsPlugin,
             combat::CombatPlugin,
+            animation::AnimationPlugin,
         ))
         .add_systems(Startup, (setup_camera, setup_physics))
         .run();

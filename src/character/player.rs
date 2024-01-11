@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::character::{Character, ProjectileShooter, ShootEvent};
-use crate::combat::{ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
+use crate::combat::{Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
 use crate::graphics::GameAssets;
 
 pub struct PlayerPlugin;
@@ -50,10 +50,11 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
                 damage: 4.5,
                 knockback: 8000.0,
                 speed: 25000.0,
-                life_time: Timer::from_seconds(0.12, TimerMode::Once),
+                life_time: Timer::from_seconds(0.20, TimerMode::Once),
             },
             attack_speed: Timer::from_seconds(0.5, TimerMode::Once),
         })
+        .insert(Immunity(Timer::from_seconds(0.25, TimerMode::Once)))
         .insert(Name::new("Player"))
         .insert(Player);
 }

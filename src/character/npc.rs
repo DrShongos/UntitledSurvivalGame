@@ -3,7 +3,7 @@ use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
 
 use crate::{
-    combat::{ENEMY_GROUP, PROJECTILE_GROUP},
+    combat::{Immunity, ENEMY_GROUP, PROJECTILE_GROUP},
     graphics::GameAssets,
 };
 
@@ -53,6 +53,7 @@ pub fn spawn_friendly(commands: &mut Commands, game_assets: &Res<GameAssets>, po
             accel: 3.9,
             damp: 5.0,
         })
+        .insert(Immunity(Timer::from_seconds(0.25, TimerMode::Once)))
         .insert(NpcKind::Friendly {
             target_point: None,
             target_change: Timer::from_seconds(
