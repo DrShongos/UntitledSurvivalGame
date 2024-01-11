@@ -58,6 +58,8 @@ fn spawn_friendly(commands: &mut Commands, game_assets: &Res<GameAssets>, positi
             Group::from_bits_truncate(PROJECTILE_GROUP | 0b0001),
         ))
         .insert(Character {
+            health: 25.0,
+
             input: Vec2::ZERO,
             speed: 7500.0,
             accel: 3.9,

@@ -38,6 +38,8 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
             Group::from_bits_truncate(PROJECTILE_GROUP | 0b0001),
         ))
         .insert(Character {
+            health: 30.0,
+
             input: Vec2::ZERO,
             speed: 7500.0,
             accel: 3.9,
@@ -45,6 +47,8 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
         })
         .insert(ProjectileShooter {
             projectile_stats: ProjectileStats {
+                damage: 4.5,
+                knockback: 8000.0,
                 speed: 25000.0,
                 life_time: Timer::from_seconds(0.12, TimerMode::Once),
             },

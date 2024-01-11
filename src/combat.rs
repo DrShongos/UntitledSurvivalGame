@@ -3,7 +3,7 @@ use core::panic;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::graphics::GameAssets;
+use crate::{character::Character, graphics::GameAssets};
 
 pub struct CombatPlugin;
 
@@ -14,7 +14,15 @@ pub const ENEMY_GROUP: u32 = 0b0100;
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnProjectileEvent>()
-            .add_systems(Update, (projectile_spawn_event, collision_event))
+            .add_event::<CharacterAttackEvent>()
+            .add_systems(
+                Update,
+                (
+                    projectile_spawn_event,
+                    character_attack_event,
+                    collision_event,
+                ),
+            )
             .add_systems(FixedUpdate, handle_projectiles);
     }
 }
@@ -27,13 +35,21 @@ pub struct SpawnProjectileEvent {
     pub target_group: u32,
 }
 
+#[derive(Event)]
+pub struct CharacterAttackEvent {
+    pub victim: Entity,
+    pub projectile: Projectile,
+}
+
 #[derive(Clone)]
 pub struct ProjectileStats {
+    pub damage: f32,
+    pub knockback: f32,
     pub speed: f32,
     pub life_time: Timer,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Projectile {
     pub stats: ProjectileStats,
     pub direction: Vec2,
@@ -107,14 +123,51 @@ fn handle_projectiles(
 fn collision_event(
     mut commands: Commands,
     projectile_query: Query<&Projectile>,
-    mut events: EventReader<CollisionEvent>,
+    character_query: Query<&Character>,
+    mut collision_events: EventReader<CollisionEvent>,
+    mut attack_event_writer: EventWriter<CharacterAttackEvent>,
 ) {
-    for event in events.read() {
-        // The projectile should always be the second entity in the event (hopefully) (please)
-        if let CollisionEvent::Started(_, projectile, _) = event {
-            if projectile_query.get(*projectile).is_ok() {
-                commands.entity(*projectile).despawn_recursive();
+    for event in collision_events.read() {
+        if let CollisionEvent::Started(first, second, _) = event {
+            // We check each side two times because both entities may not be always in the same order
+            // TODO: Follow the DRY principle
+            if let Ok(hit_projectile) = projectile_query.get(*first) {
+                if character_query.get(*second).is_ok() {
+                    attack_event_writer.send(CharacterAttackEvent {
+                        victim: *second,
+                        projectile: (*hit_projectile).clone(),
+                    });
+                }
+                commands.entity(*first).despawn_recursive();
+                continue; // If this branch happened, there's no reason to check a second time, so we carry on
             }
+
+            if let Ok(hit_projectile) = projectile_query.get(*second) {
+                if character_query.get(*first).is_ok() {
+                    attack_event_writer.send(CharacterAttackEvent {
+                        victim: *first,
+                        projectile: (*hit_projectile).clone(),
+                    });
+                }
+                commands.entity(*second).despawn_recursive();
+            }
+        }
+    }
+}
+
+fn character_attack_event(
+    mut attack_events: EventReader<CharacterAttackEvent>,
+    mut character_query: Query<(&mut Character, &mut Velocity)>,
+    time: Res<Time>,
+) {
+    let delta = time.delta_seconds();
+
+    for event in attack_events.read() {
+        if let Ok((mut character, mut velocity)) = character_query.get_mut(event.victim) {
+            character.health -= event.projectile.stats.damage;
+
+            velocity.linvel =
+                event.projectile.direction * (event.projectile.stats.knockback * delta);
         }
     }
 }

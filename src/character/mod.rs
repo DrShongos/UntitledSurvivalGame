@@ -13,7 +13,7 @@ impl Plugin for CharacterPlugin {
         app.add_plugins((npc::NpcPlugin, player::PlayerPlugin))
             .add_event::<ShootEvent>()
             .add_systems(FixedUpdate, move_characters)
-            .add_systems(Update, (shoot_events, shooter_cooldown));
+            .add_systems(Update, (character_update, shoot_events, shooter_cooldown));
     }
 }
 
@@ -32,6 +32,10 @@ pub struct ProjectileShooter {
 
 #[derive(Component)]
 pub struct Character {
+    // Combat
+    pub health: f32,
+
+    // Movement
     pub input: Vec2,
     pub speed: f32,
     pub accel: f32,
@@ -49,6 +53,14 @@ fn move_characters(mut character_query: Query<(&Character, &mut Velocity)>, time
             velocity.linvel = velocity.linvel.lerp(input, character.accel * delta);
         } else {
             velocity.linvel = velocity.linvel.lerp(Vec2::ZERO, character.damp * delta);
+        }
+    }
+}
+
+fn character_update(mut commands: Commands, character_query: Query<(Entity, &Character)>) {
+    for (entity, character) in character_query.iter() {
+        if character.health <= 0.0 {
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
