@@ -54,6 +54,7 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
             },
             attack_speed: Timer::from_seconds(0.5, TimerMode::Once),
         })
+        .insert(Name::new("Player"))
         .insert(Player);
 }
 

@@ -13,7 +13,9 @@ impl Plugin for CharacterPlugin {
         app.add_plugins((npc::NpcPlugin, player::PlayerPlugin))
             .add_event::<ShootEvent>()
             .add_systems(FixedUpdate, move_characters)
-            .add_systems(Update, (character_update, shoot_events, shooter_cooldown));
+            .add_systems(Update, (character_update, shoot_events, shooter_cooldown))
+            .register_type::<Character>()
+            .register_type::<ProjectileShooter>();
     }
 }
 
@@ -24,13 +26,13 @@ pub struct ShootEvent {
     pub target_group: u32,
 }
 
-#[derive(Component)]
+#[derive(Reflect, Component)]
 pub struct ProjectileShooter {
     pub projectile_stats: ProjectileStats,
     pub attack_speed: Timer,
 }
 
-#[derive(Component)]
+#[derive(Reflect, Component)]
 pub struct Character {
     // Combat
     pub health: f32,

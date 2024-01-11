@@ -13,8 +13,7 @@ pub struct NpcPlugin;
 
 impl Plugin for NpcPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, populate_world)
-            .add_systems(Update, npc_update);
+        app.add_systems(Update, npc_update);
     }
 }
 
@@ -27,18 +26,7 @@ pub enum NpcKind {
     Hostile, // TODO
 }
 
-fn populate_world(mut commands: Commands, game_assets: Res<GameAssets>) {
-    let mut rng = rand::thread_rng();
-
-    for _ in 0..40 {
-        let pos_x = rng.gen_range(-1000.0..1000.0) as f32;
-        let pos_y = rng.gen_range(-1000.0..1000.0) as f32;
-
-        spawn_friendly(&mut commands, &game_assets, Vec2::new(pos_x, pos_y));
-    }
-}
-
-fn spawn_friendly(commands: &mut Commands, game_assets: &Res<GameAssets>, position: Vec2) {
+pub fn spawn_friendly(commands: &mut Commands, game_assets: &Res<GameAssets>, position: Vec2) {
     commands
         .spawn(SpriteBundle {
             sprite: Sprite {
@@ -99,6 +87,7 @@ fn npc_update(
                         velocity.linvel = velocity
                             .linvel
                             .lerp(Vec2::ZERO, character.damp * time.delta_seconds());
+                        *target_point = None;
                     }
                 } else {
                     character.input = Vec2::ZERO;

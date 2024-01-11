@@ -23,7 +23,9 @@ impl Plugin for CombatPlugin {
                     collision_event,
                 ),
             )
-            .add_systems(FixedUpdate, handle_projectiles);
+            .add_systems(FixedUpdate, handle_projectiles)
+            .register_type::<Projectile>()
+            .register_type::<ProjectileStats>();
     }
 }
 
@@ -41,7 +43,7 @@ pub struct CharacterAttackEvent {
     pub projectile: Projectile,
 }
 
-#[derive(Clone)]
+#[derive(Reflect, Clone)]
 pub struct ProjectileStats {
     pub damage: f32,
     pub knockback: f32,
@@ -49,7 +51,7 @@ pub struct ProjectileStats {
     pub life_time: Timer,
 }
 
-#[derive(Component, Clone)]
+#[derive(Reflect, Component, Clone)]
 pub struct Projectile {
     pub stats: ProjectileStats,
     pub direction: Vec2,

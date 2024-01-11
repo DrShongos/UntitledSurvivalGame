@@ -3,14 +3,17 @@ use bevy_rapier2d::prelude::*;
 
 mod character;
 mod combat;
+mod debug;
 mod graphics;
+mod world;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
-        .add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins((
+            debug::DebugPlugin,
+            world::WorldPlugin,
             character::CharacterPlugin,
             graphics::GraphicsPlugin,
             combat::CombatPlugin,
