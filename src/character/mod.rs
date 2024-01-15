@@ -68,7 +68,7 @@ fn character_update(
 ) {
     for (entity, character) in character_query.iter_mut() {
         if character.health <= 0.0 {
-            vanish_event_writer.send(VanishEvent { target: entity });
+            vanish_event_writer.send(VanishEvent { entity });
         }
     }
 }

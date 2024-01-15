@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use bevy_tweening::{lens::TransformScaleLens, Animator, EaseFunction, Tween};
 
-use crate::{animation::VanishEvent, character::Character, graphics::GameAssets};
+use crate::{animation::{VanishEvent, HitFlashEvent}, character::Character, graphics::GameAssets};
 
 pub struct CombatPlugin;
 
@@ -128,7 +128,7 @@ fn handle_projectiles(
         projectile.stats.life_time.tick(time.delta());
 
         if projectile.stats.life_time.just_finished() {
-            vanish_writer.send(VanishEvent { target: entity });
+            vanish_writer.send(VanishEvent { entity });
         }
 
         transform.rotation = Quat::from_rotation_arc_2d(Vec2::Y, projectile.direction);
@@ -155,7 +155,7 @@ fn collision_event(
                         projectile: (*hit_projectile).clone(),
                     });
                 }
-                projectile_vanish_writer.send(VanishEvent { target: *first });
+                projectile_vanish_writer.send(VanishEvent { entity: *first });
                 continue; // If this branch happened, there's no reason to check a second time, so we carry on
             }
 
@@ -166,7 +166,7 @@ fn collision_event(
                         projectile: (*hit_projectile).clone(),
                     });
                 }
-                projectile_vanish_writer.send(VanishEvent { target: *second });
+                projectile_vanish_writer.send(VanishEvent { entity: *second });
             }
         }
     }
@@ -175,6 +175,7 @@ fn collision_event(
 fn character_attack_event(
     mut attack_events: EventReader<CharacterAttackEvent>,
     mut character_query: Query<(&mut Character, &mut Immunity, &mut Velocity)>,
+    mut hit_flash_writer: EventWriter<HitFlashEvent>,
     time: Res<Time>,
 ) {
     let delta = time.delta_seconds();
@@ -189,6 +190,7 @@ fn character_attack_event(
                 velocity.linvel =
                     event.projectile.direction * (event.projectile.stats.knockback * delta);
 
+                hit_flash_writer.send(HitFlashEvent { entity: event.victim });
                 immunity.0.reset();
                 immunity.0.unpause();
             }
