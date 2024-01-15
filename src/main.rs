@@ -12,6 +12,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugins(bevy_tweening::TweeningPlugin)
         .add_plugins((
             debug::DebugPlugin,
             world::WorldPlugin,

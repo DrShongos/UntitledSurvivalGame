@@ -1,13 +1,11 @@
 use core::panic;
+use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use bevy_tweening::{lens::TransformScaleLens, Animator, EaseFunction, Tween};
 
-use crate::{
-    animation::{Animated, Animation},
-    character::Character,
-    graphics::GameAssets,
-};
+use crate::{animation::VanishEvent, character::Character, graphics::GameAssets};
 
 pub struct CombatPlugin;
 
@@ -19,14 +17,12 @@ impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnProjectileEvent>()
             .add_event::<CharacterAttackEvent>()
-            .add_event::<ProjectileVanishEvent>()
             .add_systems(
                 Update,
                 (
                     projectile_spawn_event,
                     character_attack_event,
                     collision_event,
-                    projectile_vanish_event,
                     immunity_update,
                 ),
             )
@@ -43,11 +39,6 @@ pub struct SpawnProjectileEvent {
     pub direction: Vec2,
     pub start_position: Vec2,
     pub target_group: u32,
-}
-
-#[derive(Event)]
-pub struct ProjectileVanishEvent {
-    pub projectile: Entity,
 }
 
 #[derive(Event)]
@@ -95,10 +86,15 @@ fn spawn_projectile(
             texture: game_assets.slash.clone(),
             ..Default::default()
         })
-        .insert(Animated {
-            current: Some(Animation::projectile_grow(1.0)),
-        })
         .insert(RigidBody::Dynamic)
+        .insert(Animator::new(Tween::new(
+            EaseFunction::CubicOut,
+            Duration::from_millis(100),
+            TransformScaleLens {
+                start: Vec3::ZERO,
+                end: Vec3::new(1.0, 1.0, 1.0),
+            },
+        )))
         .insert(Collider::cuboid(32.0, 24.0))
         .insert(Sensor)
         .insert(CollisionGroups::new(
@@ -116,7 +112,7 @@ fn spawn_projectile(
 
 fn handle_projectiles(
     mut projectile_query: Query<(Entity, &mut Projectile, &mut Transform, &mut Velocity)>,
-    mut projectile_vanish_writer: EventWriter<ProjectileVanishEvent>,
+    mut vanish_writer: EventWriter<VanishEvent>,
     time: Res<Time>,
 ) {
     let delta = time.delta_seconds();
@@ -131,8 +127,8 @@ fn handle_projectiles(
 
         projectile.stats.life_time.tick(time.delta());
 
-        if projectile.stats.life_time.finished() {
-            projectile_vanish_writer.send(ProjectileVanishEvent { projectile: entity });
+        if projectile.stats.life_time.just_finished() {
+            vanish_writer.send(VanishEvent { target: entity });
         }
 
         transform.rotation = Quat::from_rotation_arc_2d(Vec2::Y, projectile.direction);
@@ -141,23 +137,12 @@ fn handle_projectiles(
     }
 }
 
-fn projectile_vanish_event(
-    mut animated_query: Query<&mut Animated>,
-    mut vanish_events: EventReader<ProjectileVanishEvent>,
-) {
-    for event in vanish_events.read() {
-        if let Ok(mut animated) = animated_query.get_mut(event.projectile) {
-            animated.current = Some(Animation::projectile_vanish());
-        }
-    }
-}
-
 fn collision_event(
     projectile_query: Query<&Projectile>,
     character_query: Query<&Character>,
     mut collision_events: EventReader<CollisionEvent>,
     mut attack_event_writer: EventWriter<CharacterAttackEvent>,
-    mut projectile_vanish_writer: EventWriter<ProjectileVanishEvent>,
+    mut projectile_vanish_writer: EventWriter<VanishEvent>,
 ) {
     for event in collision_events.read() {
         if let CollisionEvent::Started(first, second, _) = event {
@@ -170,7 +155,7 @@ fn collision_event(
                         projectile: (*hit_projectile).clone(),
                     });
                 }
-                projectile_vanish_writer.send(ProjectileVanishEvent { projectile: *first });
+                projectile_vanish_writer.send(VanishEvent { target: *first });
                 continue; // If this branch happened, there's no reason to check a second time, so we carry on
             }
 
@@ -181,9 +166,7 @@ fn collision_event(
                         projectile: (*hit_projectile).clone(),
                     });
                 }
-                projectile_vanish_writer.send(ProjectileVanishEvent {
-                    projectile: *second,
-                });
+                projectile_vanish_writer.send(VanishEvent { target: *second });
             }
         }
     }

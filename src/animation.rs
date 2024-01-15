@@ -1,63 +1,63 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
+use bevy_tweening::{lens::TransformScaleLens, Animator, EaseFunction, Tween, TweenCompleted};
+
+pub const VANISHING_COMPLETED: u64 = 1;
 
 pub struct AnimationPlugin;
 
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, animated_update);
+        app.add_event::<VanishEvent>()
+            .add_systems(Update, (vanish_event, process_tween_events));
     }
 }
 
-pub enum AnimationKind {
-    ProjectileGrow { target_scale: f32 },
-    ProjectileVanish,
-}
-
-pub struct Animation {
-    pub kind: AnimationKind,
-}
-
-impl Animation {
-    pub fn projectile_grow(target_scale: f32) -> Self {
-        Self {
-            kind: AnimationKind::ProjectileGrow { target_scale },
-        }
-    }
-
-    pub fn projectile_vanish() -> Self {
-        Self {
-            kind: AnimationKind::ProjectileVanish,
-        }
-    }
-}
-
+/// A marker component used to check if an entity which was ordered to vanish hasn't been set
+/// already. It exists because the vanishing animation gets overriden and entities never get
+/// deleted after fully vanishing.
 #[derive(Component)]
-pub struct Animated {
-    pub current: Option<Animation>,
+struct VanishMarker;
+
+#[derive(Event)]
+pub struct VanishEvent {
+    pub target: Entity,
 }
 
-fn animated_update(
-    mut commands: Commands,
-    mut animated_query: Query<(Entity, &mut Transform, &mut Animated)>,
-    time: Res<Time>,
-) {
-    for (entity, mut transform, mut animated) in animated_query.iter_mut() {
-        if let Some(animation) = animated.current.as_mut() {
-            match animation.kind {
-                AnimationKind::ProjectileGrow { target_scale } => {
-                    transform.scale = transform.scale.lerp(
-                        Vec2::splat(target_scale).extend(1.0),
-                        25.0 * time.delta_seconds(),
-                    );
-                }
-                AnimationKind::ProjectileVanish => {
-                    transform.scale = transform
-                        .scale
-                        .lerp(Vec3::ZERO, 35.0 * time.delta_seconds());
+fn process_tween_events(mut commands: Commands, mut reader: EventReader<TweenCompleted>) {
+    for event in reader.read() {
+        if event.user_data == VANISHING_COMPLETED {
+            commands.entity(event.entity).despawn_recursive();
+        }
+    }
+}
 
-                    if transform.scale.length() < 0.1 {
-                        commands.entity(entity).despawn_recursive();
-                    }
+fn vanish_event(
+    mut commands: Commands,
+    transform_query: Query<&Transform>,
+    marked: Query<&VanishMarker>,
+    mut vanish_events: EventReader<VanishEvent>,
+) {
+    for event in vanish_events.read() {
+        if !marked.contains(event.target) {
+            if let Some(mut entity) = commands.get_entity(event.target) {
+                entity.insert(VanishMarker);
+            }
+
+            if let Ok(transform) = transform_query.get(event.target) {
+                let mut tween = Tween::new(
+                    EaseFunction::CubicOut,
+                    Duration::from_millis(100),
+                    TransformScaleLens {
+                        start: transform.scale,
+                        end: Vec3::ZERO,
+                    },
+                );
+                tween.set_completed_event(VANISHING_COMPLETED);
+
+                if let Some(mut entity) = commands.get_entity(event.target) {
+                    entity.insert(Animator::new(tween));
                 }
             }
         }

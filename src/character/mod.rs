@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::combat::{ProjectileStats, SpawnProjectileEvent};
+use crate::{
+    animation::VanishEvent,
+    combat::{ProjectileStats, SpawnProjectileEvent},
+};
 
 pub mod npc;
 pub mod player;
@@ -59,10 +62,13 @@ fn move_characters(mut character_query: Query<(&Character, &mut Velocity)>, time
     }
 }
 
-fn character_update(mut commands: Commands, character_query: Query<(Entity, &Character)>) {
-    for (entity, character) in character_query.iter() {
+fn character_update(
+    mut character_query: Query<(Entity, &Character)>,
+    mut vanish_event_writer: EventWriter<VanishEvent>,
+) {
+    for (entity, character) in character_query.iter_mut() {
         if character.health <= 0.0 {
-            commands.entity(entity).despawn_recursive();
+            vanish_event_writer.send(VanishEvent { target: entity });
         }
     }
 }

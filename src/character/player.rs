@@ -1,9 +1,8 @@
-use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
-
 use crate::character::{Character, ProjectileShooter, ShootEvent};
 use crate::combat::{Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
 use crate::graphics::GameAssets;
+use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 pub struct PlayerPlugin;
 
