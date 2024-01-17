@@ -26,7 +26,9 @@ fn main() {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    let camera_bundle = Camera2dBundle::default();
+    //camera_bundle.projection.scale = 7.0;
+    commands.spawn(camera_bundle);
 }
 
 fn setup_physics(mut rapier_config: ResMut<RapierConfiguration>) {

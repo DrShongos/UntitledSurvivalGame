@@ -2,7 +2,9 @@ use crate::animation::WobbleBundle;
 use crate::character::{Character, ProjectileShooter, ShootEvent};
 use crate::combat::{Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
 use crate::graphics::GameAssets;
+use crate::world::{MAX_WORLD_X, MAX_WORLD_Y, MIN_WORLD_X, MIN_WORLD_Y};
 use bevy::prelude::*;
+use bevy_rapier2d::na::clamp;
 use bevy_rapier2d::prelude::*;
 
 pub struct PlayerPlugin;
@@ -70,6 +72,12 @@ fn camera_follow(
             camera_transform.translation = camera_transform
                 .translation
                 .lerp(player_transform.translation, 1.5 * time.delta_seconds());
+
+            camera_transform.translation.x =
+                clamp(camera_transform.translation.x, MIN_WORLD_X + 150.0, MAX_WORLD_X - 150.0);
+
+            camera_transform.translation.y =
+                clamp(camera_transform.translation.y, MIN_WORLD_Y - 100.0, MAX_WORLD_Y + 100.0);
         }
     }
 }
