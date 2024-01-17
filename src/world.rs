@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
 
-use crate::{character::npc::spawn_friendly, graphics::GameAssets};
+use crate::{animation::WobbleBundle, character::npc::spawn_friendly, graphics::GameAssets};
 
 pub struct WorldPlugin;
 
@@ -47,14 +47,8 @@ fn spawn_tree(
     position: Vec2,
     z_offset: f32,
 ) {
-    let root = commands
-        .spawn(RigidBody::Fixed)
-        .insert(Collider::cuboid(52.0, 2.0))
-        .insert(GlobalTransform::default())
-        .insert(Transform::from_xyz(-20.0, -192.0, 2.0 + z_offset))
-        .id();
 
-    commands
+    let tree = commands
         .spawn(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
                 index: 0,
@@ -62,10 +56,19 @@ fn spawn_tree(
                 ..Default::default()
             },
             texture_atlas: game_assets.tree_atlas.clone(),
-            transform: Transform::from_translation(
-                position.extend(2.0_f32.max(2.0 + z_offset - position.y)),
-            ),
+            transform: Transform::from_xyz(20.0, 184.0, 2.0 + z_offset),
+            global_transform: GlobalTransform::default(),
             ..Default::default()
         })
-        .push_children(&[root]);
+        .insert(WobbleBundle::new(Vec3::ONE))
+        .id();
+
+    commands
+        .spawn(RigidBody::Fixed)
+        .insert(Collider::cuboid(52.0, 2.0))
+        .insert(GlobalTransform::default())
+        .insert(Transform::from_translation(
+            position.extend(2.0_f32.max(2.0 + z_offset - position.y)),
+        ))
+        .push_children(&[tree]);
 }

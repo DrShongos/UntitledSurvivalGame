@@ -1,7 +1,7 @@
 use bevy::prelude::*;
+use bevy_egui::{egui, EguiContexts};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier2d::prelude::*;
-use bevy_egui::{egui, EguiContexts};
 
 pub struct DebugPlugin;
 
@@ -10,8 +10,9 @@ impl Plugin for DebugPlugin {
         if cfg!(debug_assertions) {
             app.add_plugins((
                 WorldInspectorPlugin::new(),
-                RapierDebugRenderPlugin::default(), 
-            )).add_systems(Update, debug_render_toggle);
+                RapierDebugRenderPlugin::default(),
+            ))
+            .add_systems(Update, debug_render_toggle);
         }
     }
 }

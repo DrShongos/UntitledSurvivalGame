@@ -5,7 +5,11 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use bevy_tweening::{lens::TransformScaleLens, Animator, EaseFunction, Tween};
 
-use crate::{animation::{VanishEvent, HitFlashEvent}, character::Character, graphics::GameAssets};
+use crate::{
+    animation::{HitFlashEvent, VanishEvent},
+    character::Character,
+    graphics::GameAssets,
+};
 
 pub struct CombatPlugin;
 
@@ -190,7 +194,9 @@ fn character_attack_event(
                 velocity.linvel =
                     event.projectile.direction * (event.projectile.stats.knockback * delta);
 
-                hit_flash_writer.send(HitFlashEvent { entity: event.victim });
+                hit_flash_writer.send(HitFlashEvent {
+                    entity: event.victim,
+                });
                 immunity.0.reset();
                 immunity.0.unpause();
             }

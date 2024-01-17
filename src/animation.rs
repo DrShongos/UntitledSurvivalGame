@@ -3,7 +3,8 @@ use std::time::Duration;
 use bevy::prelude::*;
 use bevy_tweening::{
     lens::{SpriteColorLens, TransformScaleLens},
-    Animator, EaseFunction, RepeatStrategy, Tween, TweenCompleted,
+    Animator, AnimatorState, EaseFunction, EaseMethod, RepeatCount, RepeatStrategy, Tween,
+    TweenCompleted,
 };
 
 pub const VANISHING_COMPLETED: u64 = 1;
@@ -17,7 +18,12 @@ impl Plugin for AnimationPlugin {
             .add_event::<HitFlashEvent>()
             .add_systems(
                 Update,
-                (vanish_event, hit_flash_event, process_tween_events),
+                (
+                    vanish_event,
+                    hit_flash_event,
+                    wobble_animation,
+                    process_tween_events,
+                ),
             );
     }
 }
@@ -39,6 +45,44 @@ struct HitFlashMarker;
 #[derive(Event)]
 pub struct HitFlashEvent {
     pub entity: Entity,
+}
+
+#[derive(Component)]
+pub struct Wobble {
+    pub start_scale: Vec3,
+    pub enabled: bool,
+}
+
+#[derive(Bundle)]
+pub struct WobbleBundle {
+    wobble: Wobble,
+    animator: Animator<Transform>,
+}
+
+impl WobbleBundle {
+    pub fn new(scale: Vec3) -> Self {
+        let mut target_scale = scale;
+        target_scale.y -= 0.05;
+
+        WobbleBundle {
+            wobble: Wobble {
+                start_scale: scale,
+                enabled: true,
+            },
+            animator: Animator::new(
+                Tween::new(
+                    EaseFunction::CubicOut,
+                    Duration::from_millis(750),
+                    TransformScaleLens {
+                        start: scale,
+                        end: target_scale,
+                    },
+                )
+                .with_repeat_count(RepeatCount::Infinite)
+                .with_repeat_strategy(RepeatStrategy::MirroredRepeat),
+            ),
+        }
+    }
 }
 
 fn process_tween_events(mut commands: Commands, mut reader: EventReader<TweenCompleted>) {
@@ -115,6 +159,21 @@ fn hit_flash_event(
                     entity.insert(Animator::new(flash));
                 }
             }
+        }
+    }
+}
+
+fn wobble_animation(
+    mut wobble_query: Query<
+        (&Transform, &mut Animator<Transform>, &mut Wobble),
+        Without<VanishMarker>,
+    >,
+) {
+    for (transform, mut animator, wobble) in wobble_query.iter_mut() {
+        if wobble.enabled {
+            animator.state = AnimatorState::Playing;
+        } else {
+            animator.stop();
         }
     }
 }

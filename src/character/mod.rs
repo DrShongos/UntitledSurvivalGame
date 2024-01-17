@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
-    animation::VanishEvent,
+    animation::{VanishEvent, Wobble},
     combat::{ProjectileStats, SpawnProjectileEvent},
 };
 
