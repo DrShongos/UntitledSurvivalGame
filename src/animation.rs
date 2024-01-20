@@ -3,8 +3,7 @@ use std::time::Duration;
 use bevy::prelude::*;
 use bevy_tweening::{
     lens::{SpriteColorLens, TransformScaleLens},
-    Animator, AnimatorState, EaseFunction, EaseMethod, RepeatCount, RepeatStrategy, Tween,
-    TweenCompleted,
+    Animator, EaseFunction, RepeatCount, RepeatStrategy, Tween, TweenCompleted,
 };
 
 pub const VANISHING_COMPLETED: u64 = 1;
@@ -18,12 +17,7 @@ impl Plugin for AnimationPlugin {
             .add_event::<HitFlashEvent>()
             .add_systems(
                 Update,
-                (
-                    vanish_event,
-                    hit_flash_event,
-                    wobble_animation,
-                    process_tween_events,
-                ),
+                (vanish_event, hit_flash_event, process_tween_events),
             );
     }
 }
@@ -50,7 +44,6 @@ pub struct HitFlashEvent {
 #[derive(Component)]
 pub struct Wobble {
     pub start_scale: Vec3,
-    pub enabled: bool,
 }
 
 #[derive(Bundle)]
@@ -65,14 +58,11 @@ impl WobbleBundle {
         target_scale.y -= 0.05;
 
         WobbleBundle {
-            wobble: Wobble {
-                start_scale: scale,
-                enabled: true,
-            },
+            wobble: Wobble { start_scale: scale },
             animator: Animator::new(
                 Tween::new(
                     EaseFunction::CubicOut,
-                    Duration::from_millis(750),
+                    Duration::from_millis(500),
                     TransformScaleLens {
                         start: scale,
                         end: target_scale,
@@ -159,21 +149,6 @@ fn hit_flash_event(
                     entity.insert(Animator::new(flash));
                 }
             }
-        }
-    }
-}
-
-fn wobble_animation(
-    mut wobble_query: Query<
-        (&Transform, &mut Animator<Transform>, &mut Wobble),
-        Without<VanishMarker>,
-    >,
-) {
-    for (transform, mut animator, wobble) in wobble_query.iter_mut() {
-        if wobble.enabled {
-            animator.state = AnimatorState::Playing;
-        } else {
-            animator.stop();
         }
     }
 }

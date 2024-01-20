@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use bevy_tweening::Lerp;
 
 use crate::{
-    animation::{VanishEvent, Wobble},
+    animation::VanishEvent,
     combat::{ProjectileStats, SpawnProjectileEvent},
 };
 
@@ -38,26 +39,42 @@ pub struct ProjectileShooter {
 #[derive(Reflect, Component)]
 pub struct Character {
     // Combat
+    pub max_health: f32,
     pub health: f32,
 
     // Movement
     pub input: Vec2,
+    pub last_x: f32,
+
     pub speed: f32,
     pub accel: f32,
     pub damp: f32,
 }
 
-fn move_characters(mut character_query: Query<(&Character, &mut Velocity)>, time: Res<Time>) {
+fn move_characters(
+    mut character_query: Query<(&mut Character, &mut Transform, &mut Velocity)>,
+    time: Res<Time>,
+) {
     let delta = time.delta_seconds();
 
-    for (character, mut velocity) in character_query.iter_mut() {
+    for (mut character, mut transform, mut velocity) in character_query.iter_mut() {
         let mut input = character.input.normalize_or_zero();
+        let input_axis = input;
         input *= character.speed * delta;
 
         if input != Vec2::ZERO {
+            if input_axis.x != 0.0 {
+                character.last_x = input_axis.x;
+            }
+
             velocity.linvel = velocity.linvel.lerp(input, character.accel * delta);
+            transform.rotation.z = transform
+                .rotation
+                .z
+                .lerp(&(-0.1 * character.last_x), &(2.0 * delta));
         } else {
             velocity.linvel = velocity.linvel.lerp(Vec2::ZERO, character.damp * delta);
+            transform.rotation.z = transform.rotation.z.lerp(&(0.0), &(2.0 * delta));
         }
     }
 }

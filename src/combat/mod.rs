@@ -11,6 +11,10 @@ use crate::{
     graphics::GameAssets,
 };
 
+use self::healthbar::HealthbarPlugin;
+
+pub mod healthbar;
+
 pub struct CombatPlugin;
 
 pub const PROJECTILE_GROUP: u32 = 0b1000;
@@ -19,7 +23,8 @@ pub const ENEMY_GROUP: u32 = 0b0100;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SpawnProjectileEvent>()
+        app.add_plugins(HealthbarPlugin)
+            .add_event::<SpawnProjectileEvent>()
             .add_event::<CharacterAttackEvent>()
             .add_systems(
                 Update,

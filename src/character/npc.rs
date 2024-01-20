@@ -4,7 +4,7 @@ use rand::prelude::*;
 
 use crate::{
     animation::WobbleBundle,
-    combat::{Immunity, ENEMY_GROUP, PROJECTILE_GROUP},
+    combat::{self, Immunity, ENEMY_GROUP, PROJECTILE_GROUP},
     graphics::GameAssets,
 };
 
@@ -28,7 +28,7 @@ pub enum NpcKind {
 }
 
 pub fn spawn_friendly(commands: &mut Commands, game_assets: &Res<GameAssets>, position: Vec2) {
-    commands
+    let friendly = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(70.0, 150.0)),
@@ -47,9 +47,11 @@ pub fn spawn_friendly(commands: &mut Commands, game_assets: &Res<GameAssets>, po
             Group::from_bits_truncate(PROJECTILE_GROUP | 0b0001),
         ))
         .insert(Character {
+            max_health: 25.0,
             health: 25.0,
 
             input: Vec2::ZERO,
+            last_x: -1.0,
             speed: 7500.0,
             accel: 3.9,
             damp: 5.0,
@@ -62,7 +64,10 @@ pub fn spawn_friendly(commands: &mut Commands, game_assets: &Res<GameAssets>, po
                 rand::thread_rng().gen_range(5.0..15.0),
                 TimerMode::Repeating,
             ),
-        });
+        })
+        .id();
+
+    combat::healthbar::spawn_healthbar(commands, Vec2::new(0.0, -90.0), friendly);
 }
 
 fn npc_update(

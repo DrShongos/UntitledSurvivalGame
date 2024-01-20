@@ -1,6 +1,6 @@
 use crate::animation::WobbleBundle;
 use crate::character::{Character, ProjectileShooter, ShootEvent};
-use crate::combat::{Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
+use crate::combat::{self, Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
 use crate::graphics::GameAssets;
 use crate::world::{MAX_WORLD_X, MAX_WORLD_Y, MIN_WORLD_X, MIN_WORLD_Y};
 use bevy::prelude::*;
@@ -21,7 +21,7 @@ impl Plugin for PlayerPlugin {
 pub struct Player;
 
 fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
-    commands
+    let player = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(70.0, 150.0)),
@@ -40,9 +40,11 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
             Group::from_bits_truncate(PROJECTILE_GROUP | 0b0001),
         ))
         .insert(Character {
+            max_health: 30.0,
             health: 30.0,
 
             input: Vec2::ZERO,
+            last_x: -1.0,
             speed: 7500.0,
             accel: 3.9,
             damp: 5.0,
@@ -59,7 +61,10 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
         .insert(Immunity(Timer::from_seconds(0.25, TimerMode::Once)))
         .insert(WobbleBundle::new(Vec3::ONE))
         .insert(Name::new("Player"))
-        .insert(Player);
+        .insert(Player)
+        .id();
+
+    combat::healthbar::spawn_healthbar(&mut commands, Vec2::new(0.0, -90.0), player);
 }
 
 fn camera_follow(
@@ -73,11 +78,17 @@ fn camera_follow(
                 .translation
                 .lerp(player_transform.translation, 1.5 * time.delta_seconds());
 
-            camera_transform.translation.x =
-                clamp(camera_transform.translation.x, MIN_WORLD_X + 150.0, MAX_WORLD_X - 150.0);
+            camera_transform.translation.x = clamp(
+                camera_transform.translation.x,
+                MIN_WORLD_X + 150.0,
+                MAX_WORLD_X - 150.0,
+            );
 
-            camera_transform.translation.y =
-                clamp(camera_transform.translation.y, MIN_WORLD_Y - 100.0, MAX_WORLD_Y + 100.0);
+            camera_transform.translation.y = clamp(
+                camera_transform.translation.y,
+                MIN_WORLD_Y - 100.0,
+                MAX_WORLD_Y + 100.0,
+            );
         }
     }
 }
