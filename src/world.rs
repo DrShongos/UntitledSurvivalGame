@@ -96,14 +96,29 @@ fn prepare_world(mut commands: Commands, game_assets: Res<GameAssets>) {
     }
 
     for i in 0..20 {
+        let tree_index = rng.gen_range(0..=3) as usize;
         let pos_x = rng.gen_range(MIN_WORLD_X..MAX_WORLD_X) as f32;
         let pos_y = rng.gen_range(MIN_WORLD_Y..MAX_WORLD_Y) as f32;
 
         spawn_tree(
             &mut commands,
             &game_assets,
+            tree_index,
             Vec2::new(pos_x, pos_y),
             i as f32,
+        );
+    }
+
+    for _ in 0..60 {
+        let rock_index = rng.gen_range(0..=3) as usize;
+        let pos_x = rng.gen_range(MIN_WORLD_X..MAX_WORLD_X) as f32;
+        let pos_y = rng.gen_range(MIN_WORLD_Y..MAX_WORLD_Y) as f32;
+
+        spawn_rock(
+            &mut commands,
+            &game_assets,
+            rock_index,
+            Vec2::new(pos_x, pos_y),
         );
     }
 }
@@ -111,18 +126,19 @@ fn prepare_world(mut commands: Commands, game_assets: Res<GameAssets>) {
 fn spawn_tree(
     commands: &mut Commands,
     game_assets: &Res<GameAssets>,
+    sprite_index: usize,
     position: Vec2,
     z_offset: f32,
 ) {
     let tree = commands
         .spawn(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
-                index: 0,
+                index: sprite_index,
                 custom_size: Some(Vec2::new(384.0, 384.0)),
                 ..Default::default()
             },
             texture_atlas: game_assets.tree_atlas.clone(),
-            transform: Transform::from_xyz(20.0, 184.0, 2.0_f32.max(2.0 + z_offset)),
+            transform: Transform::from_xyz(20.0, 184.0, 2.0 + z_offset.abs()),
             global_transform: GlobalTransform::default(),
             ..Default::default()
         })
@@ -138,4 +154,25 @@ fn spawn_tree(
         ))
         .insert(InheritedVisibility::default())
         .push_children(&[tree]);
+}
+
+fn spawn_rock(
+    commands: &mut Commands,
+    game_assets: &Res<GameAssets>,
+    sprite_index: usize,
+    position: Vec2,
+) {
+    commands
+        .spawn(SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                index: sprite_index,
+                custom_size: Some(Vec2::new(64.0, 64.0)),
+                ..Default::default()
+            },
+            texture_atlas: game_assets.rock_atlas.clone(),
+            transform: Transform::from_translation(position.extend(-2.0)),
+            global_transform: GlobalTransform::default(),
+            ..Default::default()
+        })
+        .insert(WobbleBundle::new(Vec3::ONE));
 }

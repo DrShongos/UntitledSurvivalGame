@@ -13,6 +13,7 @@ pub struct GameAssets {
     pub humanoid: Handle<Image>,
     pub slash: Handle<Image>,
     pub tree_atlas: Handle<TextureAtlas>,
+    pub rock_atlas: Handle<TextureAtlas>,
 }
 
 fn load_assets(
@@ -23,11 +24,21 @@ fn load_assets(
     let humanoid = asset_server.load("humanoid.png");
     let slash = asset_server.load("slashNormal.png");
 
-    let tree_image = asset_server.load("tree-sheet.png");
+    let tree_image = asset_server.load("trees.png");
     let tree_atlas = texture_atlases.add(TextureAtlas::from_grid(
         tree_image,
-        Vec2::new(128.0, 128.0),
-        2,
+        Vec2::new(32.0, 32.0),
+        4,
+        1,
+        None,
+        None,
+    ));
+
+    let rock_image = asset_server.load("rocks.png");
+    let rock_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        rock_image,
+        Vec2::new(16.0, 16.0),
+        4,
         1,
         None,
         None,
@@ -37,5 +48,6 @@ fn load_assets(
         humanoid,
         slash,
         tree_atlas,
+        rock_atlas,
     });
 }
