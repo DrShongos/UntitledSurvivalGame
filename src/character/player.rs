@@ -26,7 +26,7 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
     let player = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
-                custom_size: Some(Vec2::new(70.0, 150.0)),
+                custom_size: Some(Vec2::new(120.0, 120.0)),
                 ..Default::default()
             },
             transform: Transform::from_xyz(0.0, 100.0, 0.0),
@@ -34,7 +34,7 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
             ..Default::default()
         })
         .insert(RigidBody::Dynamic)
-        .insert(Collider::cuboid(35.0, 75.0))
+        .insert(Collider::cuboid(40.0, 60.0))
         .insert(Velocity::zero())
         .insert(LockedAxes::ROTATION_LOCKED)
         .insert(CollisionGroups::new(
@@ -62,7 +62,7 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
         })
         .insert(Immunity(Timer::from_seconds(0.25, TimerMode::Once)))
         .insert(HealthRegen {
-            delay: Timer::from_seconds(10.0, TimerMode::Once),
+            delay: Timer::from_seconds(6.0, TimerMode::Once),
             speed: 0.05,
         })
         .insert(WobbleBundle::new(Vec3::ONE))
@@ -70,7 +70,7 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
         .insert(Player)
         .id();
 
-    combat::healthbar::spawn_healthbar(&mut commands, Vec2::new(0.0, -90.0), player);
+    combat::healthbar::spawn_healthbar(&mut commands, Vec2::new(0.0, -80.0), player);
 }
 
 fn camera_follow(

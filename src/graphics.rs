@@ -21,7 +21,7 @@ fn load_assets(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    let humanoid = asset_server.load("humanoid.png");
+    let humanoid = asset_server.load("human-normal.png");
     let slash = asset_server.load("slashNormal.png");
 
     let tree_image = asset_server.load("trees.png");
