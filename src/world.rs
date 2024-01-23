@@ -2,7 +2,11 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
 
-use crate::{animation::WobbleBundle, character::npc::spawn_friendly, graphics::GameAssets};
+use crate::{
+    animation::WobbleBundle,
+    character::npc::{spawn_npc, NpcKind},
+    graphics::GameAssets,
+};
 
 pub struct WorldPlugin;
 
@@ -14,11 +18,11 @@ pub const MAX_WORLD_Y: f32 = 2000.0;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, populate_world);
+        app.add_systems(Startup, prepare_world);
     }
 }
 
-fn populate_world(mut commands: Commands, game_assets: Res<GameAssets>) {
+fn prepare_world(mut commands: Commands, game_assets: Res<GameAssets>) {
     let mut rng = rand::thread_rng();
 
     commands
@@ -77,7 +81,18 @@ fn populate_world(mut commands: Commands, game_assets: Res<GameAssets>) {
         let pos_x = rng.gen_range(MIN_WORLD_X..MAX_WORLD_X) as f32;
         let pos_y = rng.gen_range(MIN_WORLD_Y..MAX_WORLD_Y) as f32;
 
-        spawn_friendly(&mut commands, &game_assets, Vec2::new(pos_x, pos_y));
+        let npc_kind = if rng.gen_bool(0.5) {
+            NpcKind::Friendly
+        } else {
+            NpcKind::Hostile
+        };
+
+        spawn_npc(
+            &mut commands,
+            &game_assets,
+            Vec2::new(pos_x, pos_y),
+            npc_kind,
+        );
     }
 
     for i in 0..20 {

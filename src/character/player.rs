@@ -7,6 +7,8 @@ use bevy::prelude::*;
 use bevy_rapier2d::na::clamp;
 use bevy_rapier2d::prelude::*;
 
+use super::HealthRegen;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -59,6 +61,10 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
             attack_speed: Timer::from_seconds(0.5, TimerMode::Once),
         })
         .insert(Immunity(Timer::from_seconds(0.25, TimerMode::Once)))
+        .insert(HealthRegen {
+            delay: Timer::from_seconds(10.0, TimerMode::Once),
+            speed: 0.05,
+        })
         .insert(WobbleBundle::new(Vec3::ONE))
         .insert(Name::new("Player"))
         .insert(Player)

@@ -17,7 +17,16 @@ impl Plugin for CharacterPlugin {
         app.add_plugins((npc::NpcPlugin, player::PlayerPlugin))
             .add_event::<ShootEvent>()
             .add_systems(FixedUpdate, move_characters)
-            .add_systems(Update, (character_update, shoot_events, shooter_cooldown))
+            .add_systems(
+                Update,
+                (
+                    character_update,
+                    shoot_events,
+                    shooter_cooldown,
+                    health_regen_update,
+                ),
+            )
+            .register_type::<HealthRegen>()
             .register_type::<Character>()
             .register_type::<ProjectileShooter>();
     }
@@ -49,6 +58,12 @@ pub struct Character {
     pub speed: f32,
     pub accel: f32,
     pub damp: f32,
+}
+
+#[derive(Reflect, Component)]
+pub struct HealthRegen {
+    pub delay: Timer,
+    pub speed: f32,
 }
 
 fn move_characters(
@@ -90,7 +105,26 @@ fn character_update(
     }
 }
 
-pub fn shoot_events(
+fn health_regen_update(
+    mut regen_query: Query<(&mut Character, &mut HealthRegen)>,
+    time: Res<Time>,
+) {
+    for (mut character, mut health_regen) in regen_query.iter_mut() {
+        health_regen.delay.tick(time.delta());
+
+        if health_regen.delay.mode() == TimerMode::Repeating {
+            panic!("Attempted to handle a HealthRegen component with a repeating delay");
+        }
+
+        if health_regen.delay.finished() {
+            if character.health < character.max_health {
+                character.health += health_regen.speed;
+            }
+        }
+    }
+}
+
+fn shoot_events(
     mut shooters: Query<(&mut ProjectileShooter, &mut Transform, &mut Collider)>,
     mut events: EventReader<ShootEvent>,
     mut spawn_event_writer: EventWriter<SpawnProjectileEvent>,
@@ -106,6 +140,7 @@ pub fn shoot_events(
                 let position = position + (extents * direction);
 
                 spawn_event_writer.send(SpawnProjectileEvent {
+                    caster: event.entity,
                     projectile_stats: shooter.projectile_stats.clone(),
                     direction,
                     start_position: position,
@@ -119,7 +154,7 @@ pub fn shoot_events(
     }
 }
 
-pub fn shooter_cooldown(mut shooters: Query<&mut ProjectileShooter>, time: Res<Time>) {
+fn shooter_cooldown(mut shooters: Query<&mut ProjectileShooter>, time: Res<Time>) {
     for mut shooter in shooters.iter_mut() {
         shooter.attack_speed.tick(time.delta());
     }

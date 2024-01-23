@@ -61,6 +61,7 @@ fn handle_healthbars(
         if let Ok((character, character_transform)) = characters.get(healthbar.target) {
             healthbar_transform.translation =
                 character_transform.translation + healthbar.offset_position.extend(0.0);
+            // TODO: Figure out why the healthbar isn't fully empty when at 0 health
             let percentage = character.health / character.max_health;
             sprite.custom_size = Some(Vec2::new(HEALTHBAR_WIDTH * percentage, HEALTHBAR_HEIGHT));
         } else {

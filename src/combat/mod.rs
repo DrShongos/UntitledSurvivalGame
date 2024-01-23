@@ -7,7 +7,10 @@ use bevy_tweening::{lens::TransformScaleLens, Animator, EaseFunction, Tween};
 
 use crate::{
     animation::{HitFlashEvent, VanishEvent},
-    character::Character,
+    character::{
+        npc::{NpcController, NpcTarget},
+        Character, HealthRegen,
+    },
     graphics::GameAssets,
 };
 
@@ -44,6 +47,7 @@ impl Plugin for CombatPlugin {
 
 #[derive(Event)]
 pub struct SpawnProjectileEvent {
+    pub caster: Entity,
     pub projectile_stats: ProjectileStats,
     pub direction: Vec2,
     pub start_position: Vec2,
@@ -66,6 +70,7 @@ pub struct ProjectileStats {
 
 #[derive(Reflect, Component, Clone)]
 pub struct Projectile {
+    pub owner: Entity,
     pub stats: ProjectileStats,
     pub direction: Vec2,
 }
@@ -79,6 +84,7 @@ fn spawn_projectile(
     position: Vec2,
     direction: Vec2,
     projectile_stats: ProjectileStats,
+    owner: Entity,
     target_group: u32,
 ) {
     commands
@@ -114,6 +120,7 @@ fn spawn_projectile(
         .insert(LockedAxes::ROTATION_LOCKED)
         .insert(Velocity::zero())
         .insert(Projectile {
+            owner,
             stats: projectile_stats,
             direction,
         });
@@ -184,6 +191,8 @@ fn collision_event(
 fn character_attack_event(
     mut attack_events: EventReader<CharacterAttackEvent>,
     mut character_query: Query<(&mut Character, &mut Immunity, &mut Velocity)>,
+    mut npc_query: Query<&mut NpcController>,
+    mut regen_query: Query<&mut HealthRegen>,
     mut hit_flash_writer: EventWriter<HitFlashEvent>,
     time: Res<Time>,
 ) {
@@ -196,8 +205,17 @@ fn character_attack_event(
             if immunity.0.finished() {
                 character.health -= event.projectile.stats.damage;
 
-                velocity.linvel =
+                velocity.linvel +=
                     event.projectile.direction * (event.projectile.stats.knockback * delta);
+
+                if let Ok(mut npc) = npc_query.get_mut(event.victim) {
+                    npc.target = Some(NpcTarget::Character(event.projectile.owner));
+                }
+
+                if let Ok(mut health_regen) = regen_query.get_mut(event.victim) {
+                    health_regen.delay.reset();
+                    health_regen.delay.unpause();
+                }
 
                 hit_flash_writer.send(HitFlashEvent {
                     entity: event.victim,
@@ -227,6 +245,7 @@ fn projectile_spawn_event(
             event.start_position,
             event.direction,
             event.projectile_stats.clone(),
+            event.caster,
             event.target_group,
         );
     }
