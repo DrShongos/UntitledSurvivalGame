@@ -1,0 +1,25 @@
+(
+    sprite_name: "ear-humanoid.png",
+    sprite_size: (90.0, 90.0),
+    sprite_color: Rgba (
+        red: 0.541,
+        green: 0.69,
+        blue: 0.376,
+        alpha: 1.0,
+    ),
+    collider_halfextents: (25.0, 45.0),
+
+    min_difficulty: 5.0,
+    max_difficulty: Some(30.0),
+
+    max_health: 20.0,
+    attack_speed: 0.35, 
+    projectile_stats: (
+        damage: 5.0,
+        knockback: 6000.0,
+        speed: 35000.0,
+        life_time: 0.20,
+    ),
+    speed: 7750.0,
+    kind: Hostile,
+)

@@ -18,16 +18,32 @@ pub const MAX_WORLD_Y: f32 = 2000.0;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::InGame), prepare_world);
+        app.register_type::<WorldManager>()
+            .add_systems(OnEnter(GameState::PreparingWorld), prepare_world)
+            .add_systems(
+                OnEnter(GameState::InGame),
+                populate_with_npcs.after(prepare_world),
+            )
+            .add_systems(Update, npc_spawning.run_if(in_state(GameState::InGame)));
     }
 }
 
-fn prepare_world(
+#[derive(Resource, Reflect)]
+pub struct WorldManager {
+    spawn_timer: Timer,
+    difficulty: f32,
+}
+
+#[derive(Resource)]
+pub struct NpcPool {
+    npcs: Vec<NpcData>,
+}
+
+pub fn prepare_world(
     mut commands: Commands,
-    mut game_sprites: ResMut<GameSprites>,
     environment_assets: Res<EnvironmentAssets>,
     npcs: Res<Assets<NpcData>>,
-    asset_server: Res<AssetServer>,
+    mut game_state: ResMut<NextState<GameState>>,
 ) {
     let mut rng = rand::thread_rng();
 
@@ -83,19 +99,9 @@ fn prepare_world(
         .insert(Collider::cuboid((MAX_WORLD_X * 2.5) / 2.0, 50.0))
         .insert(Name::new("Bottom Barrier"));
 
-    for _ in 0..40 {
-        let pos_x = rng.gen_range(MIN_WORLD_X..MAX_WORLD_X) as f32;
-        let pos_y = rng.gen_range(MIN_WORLD_Y..MAX_WORLD_Y) as f32;
-
-        npcs.iter().for_each(|npc| {
-            npc.1.load_entity(
-                &mut commands,
-                &mut game_sprites,
-                &asset_server,
-                &Vec2::new(pos_x, pos_y),
-            );
-        });
-    }
+    commands.insert_resource(NpcPool {
+        npcs: npcs.iter().map(|(_, npc)| npc.clone()).collect::<Vec<_>>(),
+    });
 
     for _ in 0..20 {
         let tree_index = rng.gen_range(0..=3) as usize;
@@ -121,6 +127,80 @@ fn prepare_world(
             rock_index,
             Vec2::new(pos_x, pos_y),
         );
+    }
+
+    commands.insert_resource(WorldManager {
+        spawn_timer: Timer::from_seconds(20.0, TimerMode::Repeating),
+        difficulty: 0.0,
+    });
+
+    game_state.set(GameState::InGame);
+}
+
+fn populate_with_npcs(
+    mut commands: Commands,
+    mut game_sprites: ResMut<GameSprites>,
+    npc_pool: Res<NpcPool>,
+    asset_server: Res<AssetServer>,
+) {
+    spawn_random_npcs(
+        &mut commands,
+        &mut game_sprites,
+        &asset_server,
+        &npc_pool,
+        40,
+        0.0,
+    );
+}
+
+fn spawn_random_npcs(
+    commands: &mut Commands,
+    game_sprites: &mut ResMut<GameSprites>,
+    asset_server: &Res<AssetServer>,
+    npc_pool: &Res<NpcPool>,
+    amount: usize,
+    difficulty: f32,
+) {
+    let mut rng = rand::thread_rng();
+
+    npc_pool.npcs.iter().for_each(|npc| {
+        println!(
+            "Min Difficulty: {}, Max Difficulty: {:?}",
+            npc.min_difficulty, npc.max_difficulty
+        );
+    });
+
+    let available_npcs = npc_pool
+        .npcs
+        .iter()
+        .filter(|npc| {
+            if let Some(max_diff) = npc.max_difficulty {
+                println!(
+                    "{}",
+                    difficulty >= npc.min_difficulty && difficulty <= max_diff
+                );
+                return difficulty >= npc.min_difficulty && difficulty <= max_diff;
+            }
+
+            difficulty >= npc.min_difficulty
+        })
+        .collect::<Vec<_>>();
+
+    println!("Possible NPCs to spawn: {}", available_npcs.len());
+
+    for _ in 0..amount {
+        if available_npcs.len() > 0 {
+            let index = rng.gen_range(0..available_npcs.len());
+            let pos_x = rng.gen_range(MIN_WORLD_X..MAX_WORLD_X) as f32;
+            let pos_y = rng.gen_range(MIN_WORLD_Y..MAX_WORLD_Y) as f32;
+
+            available_npcs[index].load_entity(
+                commands,
+                game_sprites,
+                asset_server,
+                &Vec2::new(pos_x, pos_y),
+            );
+        }
     }
 }
 
@@ -173,4 +253,35 @@ fn spawn_rock(
             ..Default::default()
         })
         .insert(WobbleBundle::new(Vec3::ONE));
+}
+
+fn npc_spawning(
+    mut commands: Commands,
+    mut game_sprites: ResMut<GameSprites>,
+    npc_pool: Res<NpcPool>,
+    asset_server: Res<AssetServer>,
+    time: Res<Time>,
+    mut world_manager: ResMut<WorldManager>,
+) {
+    world_manager.spawn_timer.tick(time.delta());
+    world_manager.difficulty += 0.0002;
+
+    if world_manager.spawn_timer.just_finished() {
+        let mut rng = rand::thread_rng();
+        let amount = rng.gen_range(1..=4usize);
+
+        println!(
+            "Requesting to spawn {amount} entities. Current difficulty: {}",
+            world_manager.difficulty
+        );
+
+        spawn_random_npcs(
+            &mut commands,
+            &mut game_sprites,
+            &asset_server,
+            &npc_pool,
+            amount,
+            world_manager.difficulty,
+        );
+    }
 }

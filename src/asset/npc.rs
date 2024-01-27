@@ -18,7 +18,7 @@ use crate::{
 
 use super::{GameSprites, LoadEntity};
 
-#[derive(Asset, TypePath, Debug, Deserialize)]
+#[derive(Asset, Clone, TypePath, Debug, Deserialize)]
 pub struct NpcData {
     pub sprite_name: String,
     pub sprite_size: Vec2,
@@ -36,7 +36,7 @@ pub struct NpcData {
     pub kind: NpcKind,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ProjectileData {
     pub damage: f32,
     pub knockback: f32,

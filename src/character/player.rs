@@ -3,7 +3,7 @@ use crate::asset::GameSprites;
 use crate::character::{Character, ProjectileShooter, ShootEvent};
 use crate::combat::{self, Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
 use crate::state::GameState;
-use crate::world::{MAX_WORLD_X, MAX_WORLD_Y, MIN_WORLD_X, MIN_WORLD_Y};
+use crate::world::{prepare_world, MAX_WORLD_X, MAX_WORLD_Y, MIN_WORLD_X, MIN_WORLD_Y};
 use bevy::prelude::*;
 use bevy_rapier2d::na::clamp;
 use bevy_rapier2d::prelude::*;
@@ -14,9 +14,12 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::InGame), spawn_player)
-            .add_systems(FixedUpdate, camera_follow)
-            .add_systems(Update, player_input);
+        app.add_systems(
+            OnEnter(GameState::PreparingWorld),
+            spawn_player.before(prepare_world),
+        )
+        .add_systems(FixedUpdate, camera_follow)
+        .add_systems(Update, player_input);
     }
 }
 

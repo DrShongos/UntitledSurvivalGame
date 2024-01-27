@@ -124,7 +124,7 @@ fn check_loading(
         match load_state {
             RecursiveDependencyLoadState::Loaded => {
                 commands.remove_resource::<FolderTracker>();
-                game_state.set(GameState::InGame);
+                game_state.set(GameState::PreparingWorld);
             }
             _ => {}
         }
