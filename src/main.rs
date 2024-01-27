@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use state::GameState;
 
 mod animation;
+mod asset;
 mod character;
 mod combat;
 mod debug;
-mod graphics;
+mod state;
 mod world;
 
 fn main() {
@@ -17,11 +19,13 @@ fn main() {
             debug::DebugPlugin,
             world::WorldPlugin,
             character::CharacterPlugin,
-            graphics::GraphicsPlugin,
+            asset::AssetPlugin,
             combat::CombatPlugin,
             animation::AnimationPlugin,
         ))
-        .add_systems(Startup, (setup_camera, setup_physics))
+        .add_state::<GameState>()
+        .add_systems(Startup, setup_camera)
+        .add_systems(OnEnter(GameState::InGame), setup_physics)
         .run();
 }
 

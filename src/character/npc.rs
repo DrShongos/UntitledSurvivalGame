@@ -1,12 +1,9 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
+use serde::Deserialize;
 
-use crate::{
-    animation::WobbleBundle,
-    combat::{self, Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP},
-    graphics::GameAssets,
-};
+use crate::{combat::PLAYER_GROUP, state::GameState};
 
 use super::{player::Player, Character, ProjectileShooter, ShootEvent};
 
@@ -16,15 +13,15 @@ pub struct NpcPlugin;
 
 impl Plugin for NpcPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, npc_update);
+        app.add_systems(Update, npc_update.run_if(in_state(GameState::InGame)));
     }
 }
 
 #[derive(Component)]
 pub struct NpcController {
-    kind: NpcKind,
+    pub kind: NpcKind,
     pub target: Option<NpcTarget>,
-    target_change: Timer,
+    pub target_change: Timer,
 }
 
 #[derive(PartialEq)]
@@ -33,6 +30,7 @@ pub enum NpcTarget {
     Character(Entity),
 }
 
+#[derive(Clone, Debug, Deserialize)]
 pub enum NpcKind {
     /// Friendly NPCs will only attack while provoked
     Friendly,
@@ -40,64 +38,6 @@ pub enum NpcKind {
     Hostile,
     /// Very Hostile NPCs will chase you after being spawned
     VeryHostile,
-}
-
-pub fn spawn_npc(
-    commands: &mut Commands,
-    game_assets: &Res<GameAssets>,
-    position: Vec2,
-    kind: NpcKind,
-) {
-    let friendly = commands
-        .spawn(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(120.0, 120.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_translation(position.extend(0.0)),
-            texture: game_assets.humanoid.clone(),
-            ..Default::default()
-        })
-        .insert(RigidBody::Dynamic)
-        .insert(Collider::cuboid(40.0, 60.0))
-        .insert(Velocity::zero())
-        .insert(LockedAxes::ROTATION_LOCKED)
-        .insert(CollisionGroups::new(
-            Group::from_bits_truncate(ENEMY_GROUP),
-            Group::from_bits_truncate(PROJECTILE_GROUP | 0b0001),
-        ))
-        .insert(Character {
-            max_health: 25.0,
-            health: 25.0,
-
-            input: Vec2::ZERO,
-            last_x: -1.0,
-            speed: 7250.0,
-            accel: 3.9,
-            damp: 5.0,
-        })
-        .insert(WobbleBundle::new(Vec3::ONE))
-        .insert(Immunity(Timer::from_seconds(0.25, TimerMode::Once)))
-        .insert(ProjectileShooter {
-            attack_speed: Timer::from_seconds(0.5, TimerMode::Once),
-            projectile_stats: ProjectileStats {
-                damage: 4.5,
-                knockback: 8000.0,
-                speed: 25000.0,
-                life_time: Timer::from_seconds(0.20, TimerMode::Once),
-            },
-        })
-        .insert(NpcController {
-            target: None,
-            target_change: Timer::from_seconds(
-                rand::thread_rng().gen_range(5.0..15.0),
-                TimerMode::Repeating,
-            ),
-            kind,
-        })
-        .id();
-
-    combat::healthbar::spawn_healthbar(commands, Vec2::new(0.0, -80.0), friendly);
 }
 
 fn npc_update(

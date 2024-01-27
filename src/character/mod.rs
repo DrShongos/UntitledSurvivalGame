@@ -5,6 +5,7 @@ use bevy_tweening::Lerp;
 use crate::{
     animation::VanishEvent,
     combat::{ProjectileStats, SpawnProjectileEvent},
+    state::GameState,
 };
 
 pub mod npc;
@@ -16,7 +17,10 @@ impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((npc::NpcPlugin, player::PlayerPlugin))
             .add_event::<ShootEvent>()
-            .add_systems(FixedUpdate, move_characters)
+            .add_systems(
+                FixedUpdate,
+                move_characters.run_if(in_state(GameState::InGame)),
+            )
             .add_systems(
                 Update,
                 (
@@ -24,7 +28,8 @@ impl Plugin for CharacterPlugin {
                     shoot_events,
                     shooter_cooldown,
                     health_regen_update,
-                ),
+                )
+                    .run_if(in_state(GameState::InGame)),
             )
             .register_type::<HealthRegen>()
             .register_type::<Character>()

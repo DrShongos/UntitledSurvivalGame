@@ -4,14 +4,16 @@ use std::time::Duration;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use bevy_tweening::{lens::TransformScaleLens, Animator, EaseFunction, Tween};
+use serde::Deserialize;
 
 use crate::{
     animation::{HitFlashEvent, VanishEvent},
+    asset::GameSprites,
     character::{
         npc::{NpcController, NpcTarget},
         Character, HealthRegen,
     },
-    graphics::GameAssets,
+    state::GameState,
 };
 
 use self::healthbar::HealthbarPlugin;
@@ -36,9 +38,13 @@ impl Plugin for CombatPlugin {
                     character_attack_event,
                     collision_event,
                     immunity_update,
-                ),
+                )
+                    .run_if(in_state(GameState::InGame)),
             )
-            .add_systems(FixedUpdate, handle_projectiles)
+            .add_systems(
+                FixedUpdate,
+                handle_projectiles.run_if(in_state(GameState::InGame)),
+            )
             .register_type::<Projectile>()
             .register_type::<Immunity>()
             .register_type::<ProjectileStats>();
@@ -60,7 +66,7 @@ pub struct CharacterAttackEvent {
     pub projectile: Projectile,
 }
 
-#[derive(Reflect, Clone)]
+#[derive(Reflect, Clone, Debug, Deserialize)]
 pub struct ProjectileStats {
     pub damage: f32,
     pub knockback: f32,
@@ -80,7 +86,8 @@ pub struct Immunity(pub Timer);
 
 fn spawn_projectile(
     commands: &mut Commands,
-    game_assets: &Res<GameAssets>,
+    game_sprites: &mut ResMut<GameSprites>,
+    asset_server: &Res<AssetServer>,
     position: Vec2,
     direction: Vec2,
     projectile_stats: ProjectileStats,
@@ -98,7 +105,7 @@ fn spawn_projectile(
                 rotation: Quat::from_rotation_arc_2d(Vec2::Y, direction),
                 scale: Vec3::ZERO,
             },
-            texture: game_assets.slash.clone(),
+            texture: game_sprites.get_or_load(&"slashNormal.png".to_string(), asset_server),
             ..Default::default()
         })
         .insert(RigidBody::Dynamic)
@@ -235,13 +242,15 @@ fn immunity_update(mut immunity_query: Query<&mut Immunity>, time: Res<Time>) {
 
 fn projectile_spawn_event(
     mut commands: Commands,
-    game_assets: Res<GameAssets>,
+    mut game_sprites: ResMut<GameSprites>,
+    asset_server: Res<AssetServer>,
     mut event_reader: EventReader<SpawnProjectileEvent>,
 ) {
     for event in event_reader.read() {
         spawn_projectile(
             &mut commands,
-            &game_assets,
+            &mut game_sprites,
+            &asset_server,
             event.start_position,
             event.direction,
             event.projectile_stats.clone(),

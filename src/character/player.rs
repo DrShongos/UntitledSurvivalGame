@@ -1,7 +1,8 @@
 use crate::animation::WobbleBundle;
+use crate::asset::GameSprites;
 use crate::character::{Character, ProjectileShooter, ShootEvent};
 use crate::combat::{self, Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
-use crate::graphics::GameAssets;
+use crate::state::GameState;
 use crate::world::{MAX_WORLD_X, MAX_WORLD_Y, MIN_WORLD_X, MIN_WORLD_Y};
 use bevy::prelude::*;
 use bevy_rapier2d::na::clamp;
@@ -13,7 +14,7 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_player)
+        app.add_systems(OnEnter(GameState::InGame), spawn_player)
             .add_systems(FixedUpdate, camera_follow)
             .add_systems(Update, player_input);
     }
@@ -22,7 +23,11 @@ impl Plugin for PlayerPlugin {
 #[derive(Component)]
 pub struct Player;
 
-fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
+fn spawn_player(
+    mut commands: Commands,
+    mut game_sprites: ResMut<GameSprites>,
+    asset_server: Res<AssetServer>,
+) {
     let player = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
@@ -30,7 +35,7 @@ fn spawn_player(mut commands: Commands, game_assets: Res<GameAssets>) {
                 ..Default::default()
             },
             transform: Transform::from_xyz(0.0, 100.0, 0.0),
-            texture: game_assets.humanoid.clone(),
+            texture: game_sprites.get_or_load(&"human-normal.png".to_string(), &asset_server),
             ..Default::default()
         })
         .insert(RigidBody::Dynamic)

@@ -4,8 +4,8 @@ use rand::prelude::*;
 
 use crate::{
     animation::WobbleBundle,
-    character::npc::{spawn_npc, NpcKind},
-    graphics::GameAssets,
+    asset::{npc::NpcData, EnvironmentAssets, GameSprites, LoadEntity},
+    state::GameState,
 };
 
 pub struct WorldPlugin;
@@ -18,11 +18,17 @@ pub const MAX_WORLD_Y: f32 = 2000.0;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, prepare_world);
+        app.add_systems(OnEnter(GameState::InGame), prepare_world);
     }
 }
 
-fn prepare_world(mut commands: Commands, game_assets: Res<GameAssets>) {
+fn prepare_world(
+    mut commands: Commands,
+    mut game_sprites: ResMut<GameSprites>,
+    environment_assets: Res<EnvironmentAssets>,
+    npcs: Res<Assets<NpcData>>,
+    asset_server: Res<AssetServer>,
+) {
     let mut rng = rand::thread_rng();
 
     commands
@@ -81,31 +87,26 @@ fn prepare_world(mut commands: Commands, game_assets: Res<GameAssets>) {
         let pos_x = rng.gen_range(MIN_WORLD_X..MAX_WORLD_X) as f32;
         let pos_y = rng.gen_range(MIN_WORLD_Y..MAX_WORLD_Y) as f32;
 
-        let npc_kind = if rng.gen_bool(0.5) {
-            NpcKind::Friendly
-        } else {
-            NpcKind::Hostile
-        };
-
-        spawn_npc(
-            &mut commands,
-            &game_assets,
-            Vec2::new(pos_x, pos_y),
-            npc_kind,
-        );
+        npcs.iter().for_each(|npc| {
+            npc.1.load_entity(
+                &mut commands,
+                &mut game_sprites,
+                &asset_server,
+                &Vec2::new(pos_x, pos_y),
+            );
+        });
     }
 
-    for i in 0..20 {
+    for _ in 0..20 {
         let tree_index = rng.gen_range(0..=3) as usize;
         let pos_x = rng.gen_range(MIN_WORLD_X..MAX_WORLD_X) as f32;
         let pos_y = rng.gen_range(MIN_WORLD_Y..MAX_WORLD_Y) as f32;
 
         spawn_tree(
             &mut commands,
-            &game_assets,
+            &environment_assets,
             tree_index,
             Vec2::new(pos_x, pos_y),
-            i as f32,
         );
     }
 
@@ -116,7 +117,7 @@ fn prepare_world(mut commands: Commands, game_assets: Res<GameAssets>) {
 
         spawn_rock(
             &mut commands,
-            &game_assets,
+            &environment_assets,
             rock_index,
             Vec2::new(pos_x, pos_y),
         );
@@ -125,10 +126,9 @@ fn prepare_world(mut commands: Commands, game_assets: Res<GameAssets>) {
 
 fn spawn_tree(
     commands: &mut Commands,
-    game_assets: &Res<GameAssets>,
+    environment_assets: &Res<EnvironmentAssets>,
     sprite_index: usize,
     position: Vec2,
-    z_offset: f32,
 ) {
     let tree = commands
         .spawn(SpriteSheetBundle {
@@ -137,8 +137,8 @@ fn spawn_tree(
                 custom_size: Some(Vec2::new(384.0, 384.0)),
                 ..Default::default()
             },
-            texture_atlas: game_assets.tree_atlas.clone(),
-            transform: Transform::from_xyz(20.0, 184.0, 2.0 + z_offset.abs()),
+            texture_atlas: environment_assets.tree_atlas.clone(),
+            transform: Transform::from_xyz(20.0, 184.0, 0.0),
             global_transform: GlobalTransform::default(),
             ..Default::default()
         })
@@ -149,16 +149,14 @@ fn spawn_tree(
         .spawn(RigidBody::Fixed)
         .insert(Collider::cuboid(52.0, 2.0))
         .insert(GlobalTransform::default())
-        .insert(Transform::from_translation(
-            position.extend(2.0_f32.max(2.0 + z_offset)),
-        ))
+        .insert(Transform::from_translation(position.extend(2.0)))
         .insert(InheritedVisibility::default())
         .push_children(&[tree]);
 }
 
 fn spawn_rock(
     commands: &mut Commands,
-    game_assets: &Res<GameAssets>,
+    environment_assets: &Res<EnvironmentAssets>,
     sprite_index: usize,
     position: Vec2,
 ) {
@@ -169,7 +167,7 @@ fn spawn_rock(
                 custom_size: Some(Vec2::new(64.0, 64.0)),
                 ..Default::default()
             },
-            texture_atlas: game_assets.rock_atlas.clone(),
+            texture_atlas: environment_assets.rock_atlas.clone(),
             transform: Transform::from_translation(position.extend(-2.0)),
             global_transform: GlobalTransform::default(),
             ..Default::default()
