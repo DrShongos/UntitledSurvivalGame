@@ -72,6 +72,8 @@ pub struct ProjectileStats {
     pub knockback: f32,
     pub speed: f32,
     pub life_time: Timer,
+    pub scale: f32,
+    pub color: Color,
 }
 
 #[derive(Reflect, Component, Clone)]
@@ -98,6 +100,7 @@ fn spawn_projectile(
         .spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(64.0, 48.0)),
+                color: projectile_stats.color,
                 ..Default::default()
             },
             transform: Transform {
@@ -114,7 +117,7 @@ fn spawn_projectile(
             Duration::from_millis(100),
             TransformScaleLens {
                 start: Vec3::ZERO,
-                end: Vec3::new(1.0, 1.0, 1.0),
+                end: Vec3::new(projectile_stats.scale, projectile_stats.scale, 1.0),
             },
         )))
         .insert(Collider::cuboid(32.0, 24.0))

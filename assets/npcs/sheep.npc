@@ -10,7 +10,7 @@
     collider_halfextents: (27.5, 47.5),
 
     min_difficulty: 0.0,
-    max_difficulty: Some(10.0),
+    max_difficulty: Some(4.0),
 
     max_health: 20.0,
     attack_speed: 0.4, 
@@ -19,6 +19,13 @@
         knockback: 15000.0,
         speed: 25000.0,
         life_time: 0.20,
+        scale: 1.0,
+        color: Rgba (
+            red: 1.0,
+            green: 1.0,
+            blue: 1.0,
+            alpha: 1.0,
+        ),
     ),
     speed: 7500.0,
     kind: Friendly,

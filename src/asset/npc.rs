@@ -42,6 +42,8 @@ pub struct ProjectileData {
     pub knockback: f32,
     pub speed: f32,
     pub life_time: f32,
+    pub scale: f32,
+    pub color: Color,
 }
 
 impl LoadEntity for NpcData {
@@ -96,6 +98,8 @@ impl LoadEntity for NpcData {
                             self.projectile_stats.life_time,
                             TimerMode::Once,
                         ),
+                        scale: self.projectile_stats.scale,
+                        color: self.projectile_stats.color,
                     },
                 },
                 NpcController {

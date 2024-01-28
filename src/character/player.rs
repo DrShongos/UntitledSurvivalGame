@@ -65,6 +65,8 @@ fn spawn_player(
                 knockback: 8000.0,
                 speed: 25000.0,
                 life_time: Timer::from_seconds(0.20, TimerMode::Once),
+                scale: 1.0,
+                color: Color::WHITE,
             },
             attack_speed: Timer::from_seconds(0.5, TimerMode::Once),
         })
