@@ -14,6 +14,7 @@ use crate::{
         Character, HealthRegen,
     },
     state::GameState,
+    world::WorldObject,
 };
 
 use self::healthbar::HealthbarPlugin;
@@ -129,6 +130,7 @@ fn spawn_projectile(
         .insert(ActiveEvents::COLLISION_EVENTS)
         .insert(LockedAxes::ROTATION_LOCKED)
         .insert(Velocity::zero())
+        .insert(WorldObject)
         .insert(Projectile {
             owner,
             stats: projectile_stats,

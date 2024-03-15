@@ -28,6 +28,7 @@ impl Plugin for AssetPlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<NpcData>()
             .init_asset_loader::<NpcDataLoader>()
+            .add_systems(PreStartup, prepare_title_screen)
             .add_systems(OnEnter(GameState::LoadingAssets), prepare_assets)
             .add_systems(
                 Update,
@@ -35,6 +36,9 @@ impl Plugin for AssetPlugin {
             );
     }
 }
+
+#[derive(Resource)]
+pub struct TitleImage(pub Handle<Image>);
 
 #[derive(Resource)]
 pub struct GameSprites {
@@ -67,6 +71,11 @@ impl GameSprites {
 
         image.unwrap().clone()
     }
+}
+
+fn prepare_title_screen(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let title_image = asset_server.load("usg-title.png");
+    commands.insert_resource(TitleImage(title_image));
 }
 
 fn prepare_assets(

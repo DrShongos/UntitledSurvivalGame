@@ -5,13 +5,14 @@ pub enum GameState {
     MainMenu,
     LoadingAssets,
     PreparingWorld,
+    PreparingNpcs,
     InGame,
     Paused,
+    Dead,
 }
 
 impl Default for GameState {
     fn default() -> Self {
-        // Main Menu not implemented yet
-        GameState::LoadingAssets
+        GameState::MainMenu
     }
 }

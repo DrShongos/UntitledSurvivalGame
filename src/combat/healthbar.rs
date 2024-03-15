@@ -21,12 +21,17 @@ pub struct HealthBar {
 const HEALTHBAR_WIDTH: f32 = 64.0;
 const HEALTHBAR_HEIGHT: f32 = 8.0;
 
+const CONTAINER_OFFSET: f32 = 6.0;
+
 pub fn spawn_healthbar(commands: &mut Commands, offset: Vec2, tracked_entity: Entity) {
     let container = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
                 color: Color::DARK_GRAY,
-                custom_size: Some(Vec2::new(HEALTHBAR_WIDTH + 6.0, HEALTHBAR_HEIGHT + 6.0)),
+                custom_size: Some(Vec2::new(
+                    HEALTHBAR_WIDTH + CONTAINER_OFFSET,
+                    HEALTHBAR_HEIGHT + CONTAINER_OFFSET,
+                )),
                 ..Default::default()
             },
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, -1.0)),
@@ -38,7 +43,10 @@ pub fn spawn_healthbar(commands: &mut Commands, offset: Vec2, tracked_entity: En
         .spawn(SpriteBundle {
             sprite: Sprite {
                 color: Color::DARK_GREEN,
-                custom_size: Some(Vec2::new(HEALTHBAR_WIDTH, HEALTHBAR_HEIGHT + 6.0)),
+                custom_size: Some(Vec2::new(
+                    HEALTHBAR_WIDTH,
+                    HEALTHBAR_HEIGHT + CONTAINER_OFFSET,
+                )),
                 ..Default::default()
             },
             transform: Transform::from_translation(offset.extend(-2.0)),

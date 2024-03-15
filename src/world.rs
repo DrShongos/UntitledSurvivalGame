@@ -19,14 +19,27 @@ pub const MAX_WORLD_Y: f32 = 2000.0;
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<WorldManager>()
+            .add_event::<ClearWorldEvent>()
+            .init_resource::<NpcPool>()
             .add_systems(OnEnter(GameState::PreparingWorld), prepare_world)
+            .add_systems(OnEnter(GameState::PreparingNpcs), populate_with_npcs)
             .add_systems(
-                OnEnter(GameState::InGame),
-                populate_with_npcs.after(prepare_world),
-            )
-            .add_systems(Update, npc_spawning.run_if(in_state(GameState::InGame)));
+                Update,
+                (
+                    npc_spawning.run_if(in_state(GameState::InGame)),
+                    clear_world_event,
+                ),
+            );
     }
 }
+
+/// A Marker component that marks an entity as part of the world.
+/// Used to clear the game when entering the main menu.
+#[derive(Component)]
+pub struct WorldObject;
+
+#[derive(Event)]
+pub struct ClearWorldEvent;
 
 #[derive(Resource, Reflect)]
 pub struct WorldManager {
@@ -37,6 +50,12 @@ pub struct WorldManager {
 #[derive(Resource)]
 pub struct NpcPool {
     npcs: Vec<NpcData>,
+}
+
+impl Default for NpcPool {
+    fn default() -> Self {
+        Self { npcs: Vec::new() }
+    }
 }
 
 pub fn prepare_world(
@@ -58,6 +77,7 @@ pub fn prepare_world(
             ..Default::default()
         })
         .insert(Collider::cuboid(50.0, (MAX_WORLD_Y * 2.5) / 2.0))
+        .insert(WorldObject)
         .insert(Name::new("Left Barrier"));
 
     commands
@@ -71,6 +91,7 @@ pub fn prepare_world(
             ..Default::default()
         })
         .insert(Collider::cuboid(50.0, (MAX_WORLD_Y * 2.5) / 2.0))
+        .insert(WorldObject)
         .insert(Name::new("Right Barrier"));
 
     commands
@@ -84,6 +105,7 @@ pub fn prepare_world(
             ..Default::default()
         })
         .insert(Collider::cuboid((MAX_WORLD_X * 2.5) / 2.0, 50.0))
+        .insert(WorldObject)
         .insert(Name::new("Top Barrier"));
 
     commands
@@ -97,6 +119,7 @@ pub fn prepare_world(
             ..Default::default()
         })
         .insert(Collider::cuboid((MAX_WORLD_X * 2.5) / 2.0, 50.0))
+        .insert(WorldObject)
         .insert(Name::new("Bottom Barrier"));
 
     commands.insert_resource(NpcPool {
@@ -134,7 +157,7 @@ pub fn prepare_world(
         difficulty: 0.0,
     });
 
-    game_state.set(GameState::InGame);
+    game_state.set(GameState::PreparingNpcs);
 }
 
 fn populate_with_npcs(
@@ -142,6 +165,7 @@ fn populate_with_npcs(
     mut game_sprites: ResMut<GameSprites>,
     npc_pool: Res<NpcPool>,
     asset_server: Res<AssetServer>,
+    mut game_state: ResMut<NextState<GameState>>,
 ) {
     spawn_random_npcs(
         &mut commands,
@@ -151,6 +175,7 @@ fn populate_with_npcs(
         40,
         0.0,
     );
+    game_state.set(GameState::InGame);
 }
 
 fn spawn_random_npcs(
@@ -163,30 +188,17 @@ fn spawn_random_npcs(
 ) {
     let mut rng = rand::thread_rng();
 
-    npc_pool.npcs.iter().for_each(|npc| {
-        println!(
-            "Min Difficulty: {}, Max Difficulty: {:?}",
-            npc.min_difficulty, npc.max_difficulty
-        );
-    });
-
     let available_npcs = npc_pool
         .npcs
         .iter()
         .filter(|npc| {
             if let Some(max_diff) = npc.max_difficulty {
-                println!(
-                    "{}",
-                    difficulty >= npc.min_difficulty && difficulty <= max_diff
-                );
                 return difficulty >= npc.min_difficulty && difficulty <= max_diff;
             }
 
             difficulty >= npc.min_difficulty
         })
         .collect::<Vec<_>>();
-
-    println!("Possible NPCs to spawn: {}", available_npcs.len());
 
     for _ in 0..amount {
         if available_npcs.len() > 0 {
@@ -222,6 +234,7 @@ fn spawn_tree(
             global_transform: GlobalTransform::default(),
             ..Default::default()
         })
+        .insert(WorldObject)
         .insert(WobbleBundle::new(Vec3::ONE))
         .id();
 
@@ -230,6 +243,7 @@ fn spawn_tree(
         .insert(Collider::cuboid(52.0, 2.0))
         .insert(GlobalTransform::default())
         .insert(Transform::from_translation(position.extend(2.0)))
+        .insert(WorldObject)
         .insert(InheritedVisibility::default())
         .push_children(&[tree]);
 }
@@ -252,7 +266,20 @@ fn spawn_rock(
             global_transform: GlobalTransform::default(),
             ..Default::default()
         })
+        .insert(WorldObject)
         .insert(WobbleBundle::new(Vec3::ONE));
+}
+
+fn clear_world_event(
+    mut commands: Commands,
+    world_object_query: Query<Entity, With<WorldObject>>,
+    mut clear_world_event: EventReader<ClearWorldEvent>,
+) {
+    for _ in clear_world_event.read() {
+        for world_entity in world_object_query.iter() {
+            commands.entity(world_entity).despawn_recursive();
+        }
+    }
 }
 
 fn npc_spawning(
@@ -271,7 +298,7 @@ fn npc_spawning(
         let amount = rng.gen_range(1..=4usize);
 
         println!(
-            "Requesting to spawn {amount} entities. Current difficulty: {}",
+            "requesting to spawn {amount} entities. current difficulty: {}",
             world_manager.difficulty
         );
 

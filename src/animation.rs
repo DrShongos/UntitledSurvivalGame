@@ -6,6 +6,8 @@ use bevy_tweening::{
     Animator, EaseFunction, RepeatCount, RepeatStrategy, Tween, TweenCompleted,
 };
 
+use crate::{character::player::Player, state::GameState};
+
 pub const VANISHING_COMPLETED: u64 = 1;
 pub const FLASH_COMPLETED: u64 = 2;
 
@@ -75,9 +77,17 @@ impl WobbleBundle {
     }
 }
 
-fn process_tween_events(mut commands: Commands, mut reader: EventReader<TweenCompleted>) {
+fn process_tween_events(
+    mut commands: Commands,
+    mut reader: EventReader<TweenCompleted>,
+    player_query: Query<&Player>,
+    mut game_state: ResMut<NextState<GameState>>,
+) {
     for event in reader.read() {
         if event.user_data == VANISHING_COMPLETED {
+            if player_query.contains(event.entity) {
+                game_state.set(GameState::Dead);
+            }
             commands.entity(event.entity).despawn_recursive();
         }
 

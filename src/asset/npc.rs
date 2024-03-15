@@ -14,6 +14,7 @@ use crate::{
         Character, ProjectileShooter,
     },
     combat::{self, Immunity, ProjectileStats, ENEMY_GROUP, PROJECTILE_GROUP},
+    world::WorldObject,
 };
 
 use super::{GameSprites, LoadEntity};
@@ -110,6 +111,7 @@ impl LoadEntity for NpcData {
                     ),
                     kind: self.kind.clone(),
                 },
+                WorldObject,
             ))
             .id();
 

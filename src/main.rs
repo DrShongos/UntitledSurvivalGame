@@ -8,6 +8,7 @@ mod character;
 mod combat;
 mod debug;
 mod state;
+mod ui;
 mod world;
 
 fn main() {
@@ -16,6 +17,7 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
         .add_plugins(bevy_tweening::TweeningPlugin)
         .add_plugins((
+            ui::UiPlugin,
             debug::DebugPlugin,
             world::WorldPlugin,
             character::CharacterPlugin,
@@ -30,9 +32,7 @@ fn main() {
 }
 
 fn setup_camera(mut commands: Commands) {
-    let camera_bundle = Camera2dBundle::default();
-    //camera_bundle.projection.scale = 7.0;
-    commands.spawn(camera_bundle);
+    commands.spawn(Camera2dBundle::default());
 }
 
 fn setup_physics(mut rapier_config: ResMut<RapierConfiguration>) {

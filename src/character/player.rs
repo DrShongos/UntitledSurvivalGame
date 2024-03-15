@@ -3,7 +3,9 @@ use crate::asset::GameSprites;
 use crate::character::{Character, ProjectileShooter, ShootEvent};
 use crate::combat::{self, Immunity, ProjectileStats, ENEMY_GROUP, PLAYER_GROUP, PROJECTILE_GROUP};
 use crate::state::GameState;
-use crate::world::{prepare_world, MAX_WORLD_X, MAX_WORLD_Y, MIN_WORLD_X, MIN_WORLD_Y};
+use crate::world::{
+    prepare_world, WorldObject, MAX_WORLD_X, MAX_WORLD_Y, MIN_WORLD_X, MIN_WORLD_Y,
+};
 use bevy::prelude::*;
 use bevy_rapier2d::na::clamp;
 use bevy_rapier2d::prelude::*;
@@ -19,7 +21,13 @@ impl Plugin for PlayerPlugin {
             spawn_player.before(prepare_world),
         )
         .add_systems(FixedUpdate, camera_follow)
-        .add_systems(Update, player_input);
+        .add_systems(
+            Update,
+            (
+                player_input.run_if(in_state(GameState::InGame)),
+                paused_menu_input.run_if(in_state(GameState::Paused)),
+            ),
+        );
     }
 }
 
@@ -78,6 +86,7 @@ fn spawn_player(
         .insert(WobbleBundle::new(Vec3::ONE))
         .insert(Name::new("Player"))
         .insert(Player)
+        .insert(WorldObject)
         .id();
 
     combat::healthbar::spawn_healthbar(&mut commands, Vec2::new(0.0, -80.0), player);
@@ -109,11 +118,18 @@ fn camera_follow(
     }
 }
 
+fn paused_menu_input(key_input: Res<Input<KeyCode>>, mut game_state: ResMut<NextState<GameState>>) {
+    if key_input.just_pressed(KeyCode::Escape) {
+        game_state.set(GameState::InGame);
+    }
+}
+
 fn player_input(
     mut player_query: Query<(Entity, &mut Character), With<Player>>,
     mut shoot_event_writer: EventWriter<ShootEvent>,
     key_input: Res<Input<KeyCode>>,
     mouse_input: Res<Input<MouseButton>>,
+    mut game_state: ResMut<NextState<GameState>>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
 ) {
@@ -137,6 +153,10 @@ fn player_input(
 
         if key_input.pressed(KeyCode::D) {
             character.input.x = 1.0;
+        }
+
+        if key_input.just_pressed(KeyCode::Escape) {
+            game_state.set(GameState::Paused);
         }
 
         if mouse_input.pressed(MouseButton::Left) {
