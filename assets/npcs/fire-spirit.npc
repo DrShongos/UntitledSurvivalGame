@@ -1,0 +1,32 @@
+(
+    sprite_name: "spirit.png",
+    sprite_size: (120.0, 120.0),
+    sprite_color: Rgba (
+        red: 0.705,
+        green: 0.3215,
+        blue: 0.3215,
+        alpha: 1.0,
+    ),
+    collider_halfextents: (40.0, 65.0),
+
+    min_difficulty: 9.5,
+    max_difficulty: Some(22.0),
+
+    max_health: 65.0,
+    attack_speed: 0.8,
+    projectile_stats: (
+        damage: 15.0,
+        knockback: 21000.0,
+        speed: 36000.0,
+        life_time: 0.20,
+        scale: 1.0,
+        color: Rgba (
+            red: 0.705,
+            green: 0.3215,
+            blue: 0.3215,
+            alpha: 1.0,
+        ),
+    ),
+    speed: 10500.0,
+    kind: Hostile,
+)

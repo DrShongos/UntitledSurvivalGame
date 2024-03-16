@@ -1,0 +1,32 @@
+(
+    sprite_name: "wendigo.png",
+    sprite_size: (175.0, 175.0),
+    sprite_color: Rgba (
+        red: 1.0,
+        green: 1.0,
+        blue: 1.0,
+        alpha: 1.0,
+    ),
+    collider_halfextents: (67.5, 87.5),
+
+    min_difficulty: 12.5,
+    max_difficulty: None,
+
+    max_health: 150.0,
+    attack_speed: 1.15,
+    projectile_stats: (
+        damage: 20.5,
+        knockback: 30000.0,
+        speed: 45000.0,
+        life_time: 0.20,
+        scale: 1.5,
+        color: Rgba (
+            red: 0.705,
+            green: 0.3215,
+            blue: 0.3215,
+            alpha: 1.0,
+        ),
+    ),
+    speed: 9500.0,
+    kind: Hostile,
+)

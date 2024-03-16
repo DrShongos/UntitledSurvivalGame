@@ -1,0 +1,32 @@
+(
+    sprite_name: "orc.png",
+    sprite_size: (140.0, 140.0),
+    sprite_color: Rgba (
+        red: 1.0,
+        green: 1.0,
+        blue: 1.0,
+        alpha: 1.0,
+    ),
+    collider_halfextents: (50.0, 70.0),
+
+    min_difficulty: 7.5,
+    max_difficulty: Some(20.0),
+
+    max_health: 70.0,
+    attack_speed: 1.25,
+    projectile_stats: (
+        damage: 12.5,
+        knockback: 25000.0,
+        speed: 39000.0,
+        life_time: 0.20,
+        scale: 1.25,
+        color: Rgba (
+            red: 1.0,
+            green: 1.0,
+            blue: 1.0,
+            alpha: 1.0,
+        ),
+    ),
+    speed: 6500.0,
+    kind: Hostile,
+)
